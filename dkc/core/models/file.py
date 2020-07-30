@@ -10,6 +10,7 @@ class File(TimeStampedModel, models.Model):
     name = models.CharField(max_length=255)
     blob = models.FileField()
     checksum = models.CharField(max_length=128, blank=True, null=True)
+    # TODO: owner on_delete policy?
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
     # TimeStampedModel also provides "created" and "modified" fields
 
