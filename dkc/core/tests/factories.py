@@ -34,7 +34,7 @@ class FolderFactory(factory.django.DjangoModelFactory):
     class Params:
         parent: Optional[Folder] = None
 
-    name = factory.Faker('words')
+    name = factory.Faker('word')
     description = factory.Faker('paragraph')
 
     @classmethod
