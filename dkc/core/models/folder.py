@@ -1,19 +1,19 @@
-from django.contrib.auth.models import User
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
+from treebeard.mp_tree import MP_Node
 
-from dkc.core.models import Quota
 
-
-class Folder(TimeStampedModel, models.Model):
+class Folder(TimeStampedModel, MP_Node):
+    node_order_by = ['name']
     name = models.CharField(max_length=255)
+
     # TODO: What max_length?
     description = models.TextField(max_length=3000)
 
-    # TODO: owner on_delete policy?
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    # # TODO: owner on_delete policy?
+    # owner = models.ForeignKey(User, on_delete=models.CASCADE)
 
-    # Prevent deletion of quotas while a folder references them
-    quota = models.ForeignKey(Quota, on_delete=models.PROTECT)
+    # # Prevent deletion of quotas while a folder references them
+    # quota = models.ForeignKey(Quota, on_delete=models.PROTECT)
 
     # TimeStampedModel also provides "created" and "modified" fields
