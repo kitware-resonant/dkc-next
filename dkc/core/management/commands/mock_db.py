@@ -1,11 +1,7 @@
 import djclick as click
-from faker import Faker
 
 from dkc.core.models.folder import Folder
-
-# from dkc.core.tests.factories import FolderFactory
-
-fake = Faker()
+from dkc.core.tests.factories import FolderFactory
 
 
 def _populate_subtree(folder: Folder, depth: int, branching: int) -> None:
@@ -13,7 +9,8 @@ def _populate_subtree(folder: Folder, depth: int, branching: int) -> None:
         return
 
     for _ in range(branching):
-        child = folder.add_child(name=fake.word())
+        child: Folder = FolderFactory()
+        folder.add_child(instance=child)  # equivalent to .save()
         _populate_subtree(child, depth - 1, branching)
 
 
@@ -22,5 +19,6 @@ def _populate_subtree(folder: Folder, depth: int, branching: int) -> None:
 @click.argument('branching', type=click.INT)
 def command(depth: int, branching: int):
     for _ in range(branching):
-        root_folder: Folder = Folder.add_root(name=fake.word())
+        root_folder: Folder = FolderFactory()
+        Folder.add_root(instance=root_folder)  # equivalent to .save()
         _populate_subtree(root_folder, depth - 1, branching)
