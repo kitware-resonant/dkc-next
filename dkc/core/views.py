@@ -3,8 +3,7 @@ from django.db.models import Count, Q
 from django.shortcuts import render
 from django.views.generic import ListView
 
-
-from .models import File
+from dkc.core.models import File
 
 
 class GalleryView(ListView):
