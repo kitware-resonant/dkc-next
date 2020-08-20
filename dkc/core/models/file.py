@@ -44,6 +44,11 @@ class File(TimeStampedModel, models.Model):
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
 
     @property
+    def abs_path(self) -> str:
+        """Get a string representation of this File's absolute path."""
+        return f'{self.folder.abs_path}{self.name}'
+
+    @property
     def short_checksum(self) -> Optional[str]:
         return self.sha512[:10] if self.sha512 else None
 
