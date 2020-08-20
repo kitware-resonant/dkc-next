@@ -1,3 +1,4 @@
+from django.core import validators
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from treebeard.mp_tree import MP_Node
@@ -5,7 +6,14 @@ from treebeard.mp_tree import MP_Node
 
 class Folder(TimeStampedModel, MP_Node):
     node_order_by = ['name']
-    name = models.CharField(max_length=255)
+    name = models.CharField(
+        max_length=255,
+        validators=[
+            validators.RegexValidator(
+                regex=r'/', inverse_match=True, message='Name may not contain forward slashes.',
+            )
+        ],
+    )
 
     # TODO: What max_length?
     description = models.TextField(max_length=3000)
