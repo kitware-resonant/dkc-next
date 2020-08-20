@@ -5,12 +5,13 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
-from dkc.core.rest import FileViewSet
+from dkc.core.rest import FileViewSet, FolderViewSet
 from dkc.core.views import file_summary, GalleryView
 
 
 router = routers.SimpleRouter()
 router.register(r'files', FileViewSet)
+router.register(r'folders', FolderViewSet)
 
 # OpenAPI generation
 schema_view = get_schema_view(

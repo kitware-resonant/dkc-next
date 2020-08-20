@@ -39,11 +39,13 @@ setup(
         'celery',
         'django',
         'django-admin-display',
+        'django-click',
         'django-configurations[database,email]',
         'django-cors-headers',
         'django-extensions',
         'django-filter',
         'django-girders',
+        'django-treebeard',
         'djangorestframework',
         'drf-extensions',
         'drf-yasg',
@@ -55,8 +57,7 @@ setup(
         'gunicorn',
         'sentry-sdk',
         # Development-only
-        'django-debug-toolbar',
         'django-minio-storage',
     ],
-    extras_require={'dev': ['ipython', 'tox']},
+    extras_require={'dev': ['django-debug-toolbar', 'factory_boy', 'ipython', 'tox']},
 )
