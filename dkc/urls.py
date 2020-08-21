@@ -6,8 +6,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
 from dkc.core.rest import FileViewSet, FolderViewSet
-from dkc.core.views import file_summary, GalleryView
-
+from dkc.core.views import GalleryView, file_summary
 
 router = routers.SimpleRouter()
 router.register(r'files', FileViewSet)
