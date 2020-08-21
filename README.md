@@ -5,7 +5,7 @@ This is the simplest configuration for developers to start with.
 
 ### Initial Setup
 1. Run `docker-compose run --rm django ./manage.py migrate`
-2. Run `docker-compose run --rm django ./manage.py createsuperuser` 
+2. Run `docker-compose run --rm django ./manage.py createsuperuser`
    and follow the prompts to create your own user
 
 ### Run Application
@@ -85,3 +85,8 @@ Useful sub-commands include:
 
 To automatically reformat all code to comply with
 some (but not all) of the style checks, run `tox -e format`.
+
+## System limitations
+* A single folder may not have more than 62^5 (~900M) child folders.
+  (The number of child files in a folder is unbounded.)
+* The maximum folder depth is 50.
