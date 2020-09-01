@@ -20,7 +20,7 @@ class DkcConfig(ConfigMixin):
 
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
-        configuration.INSTALLED_APPS += ['treebeard', 'dkc.core.apps.CoreConfig']
+        configuration.INSTALLED_APPS += ['dkc.core.apps.CoreConfig']
 
 
 class DevelopmentConfiguration(DkcConfig, DevelopmentBaseConfiguration):
