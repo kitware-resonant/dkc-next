@@ -24,5 +24,6 @@ class FolderViewSet(ModelViewSet):
 
     @action(methods=['get'], detail=False)
     def roots(self, request):
-        qs = Folder.get_root_nodes()
-        return Response(qs)
+        queryset = Folder.get_root_nodes()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
