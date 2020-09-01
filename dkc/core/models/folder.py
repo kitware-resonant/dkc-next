@@ -10,7 +10,7 @@ class Folder(TimeStampedModel, MP_Node):
         max_length=255,
         validators=[
             validators.RegexValidator(
-                regex=r'/', inverse_match=True, message='Name may not contain forward slashes.',
+                regex=r'/', inverse_match=True, message='Name may not contain forward slashes.'
             )
         ],
     )
