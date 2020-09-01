@@ -1,7 +1,6 @@
-from django_extensions.db.models import TimeStampedModel
-
 from django.core import validators
 from django.db import models
+from django_extensions.db.models import TimeStampedModel
 
 
 class Folder(TimeStampedModel, models.Model):

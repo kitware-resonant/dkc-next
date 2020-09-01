@@ -1,7 +1,6 @@
 import os
 
 import configurations.importer
-
 from django.core.asgi import get_asgi_application
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'dkc.settings'
