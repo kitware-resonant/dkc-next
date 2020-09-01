@@ -12,7 +12,6 @@ def _populate_subtree(folder: typing.Optional[Folder], depth: int, branching: in
 
     for _ in range(branching):
         child: Folder = FolderFactory(parent=folder)
-        child.save()
         _populate_subtree(child, depth - 1, branching)
 
 
