@@ -1,5 +1,6 @@
-from django.core.exceptions import ValidationError
 import pytest
+
+from django.core.exceptions import ValidationError
 
 
 def test_folder_name_invalid(folder_factory):

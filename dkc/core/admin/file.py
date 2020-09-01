@@ -1,9 +1,9 @@
+from django_admin_display import admin_display
+
 from django.contrib import admin, messages
 from django.contrib.admin import ModelAdmin
 from django.db.models import QuerySet
 from django.http import HttpRequest
-from django_admin_display import admin_display
-
 from dkc.core.models import File
 from dkc.core.tasks import file_compute_checksum
 

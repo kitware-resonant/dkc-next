@@ -1,5 +1,3 @@
-from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filters
 from rest_framework import serializers, status
 from rest_framework.decorators import action
@@ -8,6 +6,8 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 from dkc.core.models import File
 from dkc.core.rest.user import UserSerializer
 from dkc.core.tasks import file_compute_checksum

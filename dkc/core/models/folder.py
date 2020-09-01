@@ -1,6 +1,7 @@
+from django_extensions.db.models import TimeStampedModel
+
 from django.core import validators
 from django.db import models
-from django_extensions.db.models import TimeStampedModel
 
 
 class Folder(TimeStampedModel, models.Model):
@@ -8,7 +9,9 @@ class Folder(TimeStampedModel, models.Model):
         max_length=255,
         validators=[
             validators.RegexValidator(
-                regex='/', inverse_match=True, message='Name may not contain forward slashes.',
+                regex='/',
+                inverse_match=True,
+                message='Name may not contain forward slashes.',
             )
         ],
     )

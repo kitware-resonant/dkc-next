@@ -2,7 +2,6 @@ from django.contrib.auth.models import User
 from django.db.models import Count, Q
 from django.shortcuts import render
 from django.views.generic import ListView
-
 from dkc.core.models import File
 
 

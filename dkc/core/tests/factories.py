@@ -1,8 +1,6 @@
-from typing import Optional
-
-from django.contrib.auth.models import User
 import factory.django
 
+from django.contrib.auth.models import User
 from dkc.core.models import File, Folder
 
 
@@ -29,9 +27,6 @@ class FolderFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Folder
 
-    class Params:
-        parent: Optional[Folder] = None
-
     name = factory.Faker('word')
     description = factory.Faker('paragraph')
-    parent_id = factory.LazyAttribute(lambda params: params.parent.id if params.parent else None)
+    parent = None
