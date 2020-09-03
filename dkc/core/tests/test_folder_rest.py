@@ -8,7 +8,8 @@ def test_folder_rest_list(api_client, folder):
     resp = api_client.get('/api/v1/folders/')
 
     assert resp.status_code == 200
-    assert resp.data[0]['name'] == folder.name
+    assert resp.data['count'] == 1
+    assert resp.data['results'][0]['name'] == folder.name
 
 
 @pytest.mark.django_db
@@ -17,8 +18,8 @@ def test_folder_rest_list_children(api_client, folder, folder_factory):
     resp = api_client.get(f'/api/v1/folders/?parent_id={folder.id}')
 
     assert resp.status_code == 200
-    assert len(resp.data) == 1
-    child_resp = resp.data[0]
+    assert resp.data['count'] == 1
+    child_resp = resp.data['results'][0]
     assert child_resp['id'] == child.id
     assert child_resp['parent'] == folder.id
 

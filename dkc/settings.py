@@ -18,6 +18,10 @@ class DkcConfig(ConfigMixin):
 
     BASE_DIR = str(Path(__file__).absolute().parent.parent)
 
+    REST_FRAMEWORK = {
+        'DEFAULT_PAGINATION_CLASS': 'dkc.core.utils.DefaultPagination',
+    }
+
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
         configuration.INSTALLED_APPS += ['dkc.core.apps.CoreConfig']
