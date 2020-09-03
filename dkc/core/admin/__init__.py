@@ -1,4 +1,4 @@
 from .file import FileAdmin
-from .folder import FolderTreeAdmin
+from .folder import FolderAdmin
 
-__all__ = ['FileAdmin', 'FolderTreeAdmin']
+__all__ = ['FileAdmin', 'FolderAdmin']

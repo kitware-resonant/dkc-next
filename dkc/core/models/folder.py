@@ -1,16 +1,16 @@
 from django.core import validators
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
-from treebeard.mp_tree import MP_Node
 
 
-class Folder(TimeStampedModel, MP_Node):
-    node_order_by = ['name']
+class Folder(TimeStampedModel, models.Model):
     name = models.CharField(
         max_length=255,
         validators=[
             validators.RegexValidator(
-                regex=r'/', inverse_match=True, message='Name may not contain forward slashes.'
+                regex='/',
+                inverse_match=True,
+                message='Name may not contain forward slashes.',
             )
         ],
     )
@@ -20,6 +20,8 @@ class Folder(TimeStampedModel, MP_Node):
 
     # # TODO: owner on_delete policy?
     # owner = models.ForeignKey(User, on_delete=models.CASCADE)
+
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True)
 
     # # Prevent deletion of quotas while a folder references them
     # quota = models.ForeignKey(Quota, on_delete=models.PROTECT)
