@@ -21,7 +21,7 @@ class Folder(TimeStampedModel, models.Model):
     # # TODO: owner on_delete policy?
     # owner = models.ForeignKey(User, on_delete=models.CASCADE)
 
-    parent = models.ForeignKey('self', on_delete=models.PROTECT, null=True)
+    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True)
 
     # # Prevent deletion of quotas while a folder references them
     # quota = models.ForeignKey(Quota, on_delete=models.PROTECT)
