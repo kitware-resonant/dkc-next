@@ -19,7 +19,7 @@ class DkcConfig(ConfigMixin):
     BASE_DIR = str(Path(__file__).absolute().parent.parent)
 
     REST_FRAMEWORK = {
-        'DEFAULT_PAGINATION_CLASS': 'dkc.core.utils.DefaultPagination',
+        'DEFAULT_PAGINATION_CLASS': 'dkc.core.rest.pagination.BoundedLimitOffsetPagination',
     }
 
     @staticmethod
