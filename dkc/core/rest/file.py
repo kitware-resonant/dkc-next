@@ -3,7 +3,6 @@ from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filters
 from rest_framework import serializers, status
 from rest_framework.decorators import action
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ReadOnlyModelViewSet
@@ -30,8 +29,6 @@ class FileViewSet(ReadOnlyModelViewSet):
 
     filter_backends = [filters.DjangoFilterBackend]
     filterset_fields = ['name', 'checksum']
-
-    pagination_class = PageNumberPagination
 
     @action(detail=True, methods=['get'])
     def download(self, request, pk=None):
