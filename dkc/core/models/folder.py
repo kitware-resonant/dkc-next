@@ -2,8 +2,12 @@ from django.core import validators
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 
+from dkc.core.exceptions import MaxFolderDepthExceeded
+
 
 class Folder(TimeStampedModel, models.Model):
+    MAX_TREE_HEIGHT = 30
+
     name = models.CharField(
         max_length=255,
         validators=[
@@ -27,3 +31,14 @@ class Folder(TimeStampedModel, models.Model):
     # quota = models.ForeignKey(Quota, on_delete=models.PROTECT)
 
     # TimeStampedModel also provides "created" and "modified" fields
+
+    def path_to_root(self) -> list:
+        folder = self
+        path = [folder]
+        while folder.parent is not None:
+            folder = folder.parent
+            path.append(folder)
+            if len(path) > self.MAX_TREE_HEIGHT:
+                raise MaxFolderDepthExceeded()
+
+        return path[::-1]
