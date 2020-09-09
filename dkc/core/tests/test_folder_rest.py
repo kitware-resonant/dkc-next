@@ -24,6 +24,15 @@ def test_folder_rest_list_children(api_client, folder, folder_factory):
     assert child_resp['parent'] == folder.id
 
 
+@pytest.mark.django_db
+def test_folder_rest_path(api_client, folder, folder_factory):
+    child = folder_factory(parent=folder)
+    grandchild = folder_factory(parent=child)
+    resp = api_client.get(f'/api/v1/folders/{grandchild.id}/path/')
+    assert resp.status_code == 200
+    assert [f['name'] for f in resp.data] == [folder.name, child.name, grandchild.name]
+
+
 @pytest.mark.skip
 @pytest.mark.django_db
 def test_folder_rest_create(api_client):
