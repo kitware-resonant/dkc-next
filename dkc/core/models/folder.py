@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import List
+
 from django.core import validators
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
@@ -32,7 +36,7 @@ class Folder(TimeStampedModel, models.Model):
 
     # TimeStampedModel also provides "created" and "modified" fields
 
-    def path_to_root(self) -> list:
+    def path_to_root(self) -> List[Folder]:
         folder = self
         path = [folder]
         while folder.parent is not None:
