@@ -8,7 +8,7 @@ from rest_framework import permissions, routers
 from dkc.core.rest import FileViewSet, FolderViewSet
 from dkc.core.views import GalleryView, file_summary
 
-router = routers.SimpleRouter()
+router = routers.SimpleRouter(trailing_slash=False)
 router.register(r'files', FileViewSet)
 router.register(r'folders', FolderViewSet)
 

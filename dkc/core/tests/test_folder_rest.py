@@ -5,7 +5,7 @@ from dkc.core.models import Folder
 
 @pytest.mark.django_db
 def test_folder_rest_list(api_client, folder):
-    resp = api_client.get('/api/v1/folders/')
+    resp = api_client.get('/api/v1/folders')
 
     assert resp.status_code == 200
     assert resp.data['count'] == 1
@@ -15,7 +15,7 @@ def test_folder_rest_list(api_client, folder):
 @pytest.mark.django_db
 def test_folder_rest_list_children(api_client, folder, folder_factory):
     child = folder_factory(parent=folder)
-    resp = api_client.get(f'/api/v1/folders/?parent_id={folder.id}')
+    resp = api_client.get(f'/api/v1/folders?parent_id={folder.id}')
 
     assert resp.status_code == 200
     assert resp.data['count'] == 1
@@ -36,13 +36,13 @@ def test_folder_rest_path(api_client, folder, folder_factory):
 @pytest.mark.skip
 @pytest.mark.django_db
 def test_folder_rest_create(api_client):
-    resp = api_client.post('/api/v1/folders/')
+    resp = api_client.post('/api/v1/folders')
     assert resp.status_code == 200
 
 
 @pytest.mark.django_db
 def test_folder_rest_retrieve(api_client, folder):
-    resp = api_client.get(f'/api/v1/folders/{folder.id}/')
+    resp = api_client.get(f'/api/v1/folders/{folder.id}')
 
     assert resp.status_code == 200
     # Inspect .data to avoid parsing the response content
@@ -52,13 +52,13 @@ def test_folder_rest_retrieve(api_client, folder):
 @pytest.mark.skip
 @pytest.mark.django_db
 def test_folder_rest_update(api_client, folder):
-    resp = api_client.put(f'/api/v1/folders/{folder.id}/')
+    resp = api_client.put(f'/api/v1/folders/{folder.id}')
     assert resp.status_code == 200
 
 
 @pytest.mark.django_db
 def test_folder_rest_destroy(api_client, folder):
-    resp = api_client.delete(f'/api/v1/folders/{folder.id}/')
+    resp = api_client.delete(f'/api/v1/folders/{folder.id}')
 
     assert resp.status_code == 204
     with pytest.raises(Folder.DoesNotExist):
