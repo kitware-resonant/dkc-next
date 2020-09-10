@@ -26,8 +26,14 @@ class FolderViewSet(ModelViewSet):
     filter_backends = [filters.DjangoFilterBackend]
     filterset_fields = ['parent_id']
 
-    @action(methods=['get'], detail=False)
+    @action(detail=False)
     def roots(self, request):
         queryset = Folder.objects.filter(parent_id__isnull=True)
         serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True)
+    def path(self, request, pk):
+        folder = Folder.objects.get(pk=pk)
+        serializer = self.get_serializer(folder.path_to_root(), many=True)
         return Response(serializer.data)

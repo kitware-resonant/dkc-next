@@ -1,0 +1,2 @@
+class MaxFolderDepthExceeded(Exception):
+    pass
