@@ -13,6 +13,20 @@ from dkc.core.exceptions import MaxFolderDepthExceeded
 class Folder(TimeStampedModel, models.Model):
     MAX_TREE_HEIGHT = 30
 
+    class Meta:
+        indexes = [
+            models.Index(fields=['parent', 'name']),
+        ]
+        ordering = ['name']
+        constraints = [
+            models.constraints.UniqueConstraint(
+                fields=['parent', 'name'], name='folder_siblings_name_unique'
+            ),
+            models.constraints.UniqueConstraint(
+                fields=['name'], condition=models.Q(parent=None), name='root_folder_name_unique'
+            ),
+        ]
+
     name = models.CharField(
         max_length=255,
         validators=[
@@ -46,8 +60,6 @@ class Folder(TimeStampedModel, models.Model):
 
     # # Prevent deletion of quotas while a folder references them
     # quota = models.ForeignKey(Quota, on_delete=models.PROTECT)
-
-    # TimeStampedModel also provides "created" and "modified" fields
 
     def path_to_root(self) -> List[Folder]:
         folder = self
