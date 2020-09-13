@@ -51,11 +51,12 @@ class FolderViewSet(ModelViewSet):
     serializer_class = FolderSerializer
 
     filter_backends = [filters.DjangoFilterBackend]
+    filterset_class = FoldersFilterSet
 
     def filter_queryset(self, queryset):
         # Only apply the filterset class on the list endpoint
-        if self.action == 'list':
-            self.filterset_class = FoldersFilterSet
+        if self.action != 'list':
+            self.filterset_class = None
         return super().filter_queryset(queryset)
 
     @action(detail=True)
