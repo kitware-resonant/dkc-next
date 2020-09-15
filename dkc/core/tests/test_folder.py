@@ -39,3 +39,16 @@ def test_folder_max_depth_enforced(folder, folder_factory, limited_tree_height):
 
     with pytest.raises(MaxFolderDepthExceeded):
         folder_factory(parent=folder)
+
+
+@pytest.mark.django_db
+def test_folder_root_self_reference(folder):
+    assert folder.root_folder == folder
+
+
+@pytest.mark.django_db
+def test_root_folder_inherited(folder, folder_factory):
+    child = folder_factory(parent=folder)
+    grandchild = folder_factory(parent=child)
+    assert child.root_folder == folder
+    assert grandchild.root_folder == folder

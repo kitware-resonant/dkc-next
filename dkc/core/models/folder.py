@@ -37,12 +37,12 @@ class Folder(TimeStampedModel, models.Model):
     # # TODO: owner on_delete policy?
     # owner = models.ForeignKey(User, on_delete=models.CASCADE)
 
-    parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True)
-
-    @property
-    def child_folders(self):
-        """Provide a QuerySet of the child folders of this folder."""
-        return Folder.objects.filter(parent=self)
+    parent = models.ForeignKey(
+        'self', on_delete=models.CASCADE, null=True, related_name='child_folders'
+    )
+    root_folder = models.ForeignKey(
+        'self', on_delete=models.DO_NOTHING, null=True, related_name='+'
+    )
 
     # # Prevent deletion of quotas while a folder references them
     # quota = models.ForeignKey(Quota, on_delete=models.PROTECT)
@@ -70,3 +70,13 @@ def _folder_pre_save(sender, instance, *args, **kwargs):
             instance.depth = instance.parent.depth + 1
             if instance.depth > Folder.MAX_TREE_HEIGHT:
                 raise MaxFolderDepthExceeded()
+
+    if instance.root_folder is None and instance.parent is not None:
+        instance.root_folder = instance.parent.root_folder
+
+
+@receiver(models.signals.post_save, sender=Folder)
+def _folder_post_save(sender, instance, *args, **kwargs):
+    if instance.parent is None and instance.root_folder is None:
+        instance.root_folder = instance
+        instance.save()
