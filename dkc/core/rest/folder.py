@@ -27,7 +27,7 @@ class IntegerOrNullFilter(filters.Filter):
             return qs.filter(**{f'{self.field_name}__isnull': True})
         try:
             value = int(value)
-        except (TypeError, ValueError):
+        except ValueError:
             raise serializers.ValidationError(
                 {
                     self.field_name: ['May only be an integer or "null".'],
