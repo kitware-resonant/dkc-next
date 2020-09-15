@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.db.utils import IntegrityError
 import pytest
 
 from dkc.core.exceptions import MaxFolderDepthExceeded
@@ -52,3 +53,22 @@ def test_root_folder_inherited(folder, folder_factory):
     grandchild = folder_factory(parent=child)
     assert child.root_folder == folder
     assert grandchild.root_folder == folder
+
+
+@pytest.mark.django_db
+def test_folder_sibling_names_unique(folder, folder_factory):
+    child = folder_factory(parent=folder)
+    with pytest.raises(IntegrityError):
+        folder_factory(name=child.name, parent=folder)
+
+
+@pytest.mark.django_db
+def test_root_folder_names_unique(folder, folder_factory):
+    with pytest.raises(IntegrityError):
+        folder_factory(name=folder.name)
+
+
+@pytest.mark.django_db
+def test_folder_names_not_globally_unique(folder_factory):
+    root = folder_factory()
+    folder_factory(name=root.name, parent=root)

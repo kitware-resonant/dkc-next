@@ -76,3 +76,12 @@ def test_folder_list_roots(api_client, folder, folder_factory):
     assert resp.status_code == 200
     assert resp.data['count'] == 1
     assert resp.data['results'][0]['name'] == folder.name
+
+
+@pytest.mark.django_db
+def test_folder_default_ordering(api_client, folder_factory):
+    for name in ('B', 'C', 'A'):
+        folder_factory(name=name)
+    resp = api_client.get('/api/v2/folders', data={'parent': 'null'})
+    assert resp.status_code == 200
+    assert [f['name'] for f in resp.data['results']] == ['A', 'B', 'C']
