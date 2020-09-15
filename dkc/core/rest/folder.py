@@ -14,6 +14,33 @@ class FolderSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description', 'parent']
 
 
+class IntegerOrNullFilter(filters.Filter):
+    """
+    Supports filtering by either an integer or null.
+
+    This allows clients to use a special value of "null" to filter for null values,
+    otherwise it parses the value to an integer.
+    """
+
+    def filter(self, qs, value: str):
+        if value == 'null':
+            return qs.filter(**{f'{self.field_name}__isnull': True})
+        try:
+            value = int(value)
+        except ValueError:
+            raise serializers.ValidationError(
+                {
+                    self.field_name: ['May only be an integer or "null".'],
+                }
+            )
+
+        return qs.filter(**{self.field_name: value})
+
+
+class FoldersFilterSet(filters.FilterSet):
+    parent = IntegerOrNullFilter(required=True)
+
+
 class FolderViewSet(ModelViewSet):
     queryset = Folder.objects.all()
 
@@ -24,16 +51,16 @@ class FolderViewSet(ModelViewSet):
     serializer_class = FolderSerializer
 
     filter_backends = [filters.DjangoFilterBackend]
-    filterset_fields = ['parent_id']
+    filterset_class = FoldersFilterSet
 
-    @action(detail=False)
-    def roots(self, request):
-        queryset = Folder.objects.filter(parent_id__isnull=True)
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    def filter_queryset(self, queryset):
+        # Only apply the filterset class on the list endpoint
+        if self.action != 'list':
+            self.filterset_class = None
+        return super().filter_queryset(queryset)
 
     @action(detail=True)
-    def path(self, request, pk):
-        folder = Folder.objects.get(pk=pk)
+    def path(self, request, pk=None):
+        folder = self.get_object()
         serializer = self.get_serializer(folder.path_to_root(), many=True)
         return Response(serializer.data)

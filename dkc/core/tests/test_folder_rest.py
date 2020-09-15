@@ -4,18 +4,9 @@ from dkc.core.models import Folder
 
 
 @pytest.mark.django_db
-def test_folder_rest_list(api_client, folder):
-    resp = api_client.get('/api/v2/folders')
-
-    assert resp.status_code == 200
-    assert resp.data['count'] == 1
-    assert resp.data['results'][0]['name'] == folder.name
-
-
-@pytest.mark.django_db
 def test_folder_rest_list_children(api_client, folder, folder_factory):
     child = folder_factory(parent=folder)
-    resp = api_client.get(f'/api/v2/folders?parent_id={folder.id}')
+    resp = api_client.get(f'/api/v2/folders?parent={folder.id}')
 
     assert resp.status_code == 200
     assert resp.data['count'] == 1
@@ -59,7 +50,29 @@ def test_folder_rest_update(api_client, folder):
 @pytest.mark.django_db
 def test_folder_rest_destroy(api_client, folder):
     resp = api_client.delete(f'/api/v2/folders/{folder.id}')
-
     assert resp.status_code == 204
     with pytest.raises(Folder.DoesNotExist):
         Folder.objects.get(id=folder.id)
+
+
+@pytest.mark.django_db
+def test_folder_list_roots_parent_required(api_client):
+    resp = api_client.get('/api/v2/folders')
+    assert resp.status_code == 400
+    assert resp.data == {'parent': ['This field is required.']}
+
+
+@pytest.mark.django_db
+def test_folder_list_roots_invalid_parent(api_client):
+    resp = api_client.get('/api/v2/folders', data={'parent': 'x'})
+    assert resp.status_code == 400
+    assert resp.data == {'parent': ['May only be an integer or "null".']}
+
+
+@pytest.mark.django_db
+def test_folder_list_roots(api_client, folder, folder_factory):
+    folder_factory(parent=folder)  # Make child folder to test that we only get roots
+    resp = api_client.get('/api/v2/folders', data={'parent': 'null'})
+    assert resp.status_code == 200
+    assert resp.data['count'] == 1
+    assert resp.data['results'][0]['name'] == folder.name
