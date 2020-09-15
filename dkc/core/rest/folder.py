@@ -11,7 +11,7 @@ from dkc.core.models import Folder
 class FolderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Folder
-        fields = ['id', 'name', 'description', 'parent']
+        fields = ['id', 'name', 'description', 'parent', 'created', 'modified']
 
 
 class IntegerOrNullFilter(filters.Filter):
