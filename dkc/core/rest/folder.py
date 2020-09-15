@@ -24,7 +24,7 @@ class IntegerOrNullFilter(filters.Filter):
 
     def filter(self, qs, value: str):
         if value == 'null':
-            return qs.filter(**{self.field_name + '__isnull': True})
+            return qs.filter(**{f'{self.field_name}__isnull': True})
         try:
             value = int(value)
         except (TypeError, ValueError):
