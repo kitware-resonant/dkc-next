@@ -1,3 +1,5 @@
+import re
+
 from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 import pytest
@@ -60,6 +62,15 @@ def test_folder_sibling_names_unique(folder, folder_factory):
     child = folder_factory(parent=folder)
     with pytest.raises(IntegrityError):
         folder_factory(name=child.name, parent=folder)
+
+
+@pytest.mark.django_db
+def test_folder_sibling_names_unique_files(file, folder_factory):
+    escaped = re.escape(file.name)
+    with pytest.raises(
+        ValidationError, match=f'There is already a file here with the name "{escaped}"\\.'
+    ):
+        folder_factory.build(parent=file.folder, name=file.name).full_clean()
 
 
 @pytest.mark.django_db
