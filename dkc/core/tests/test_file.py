@@ -4,8 +4,8 @@ import pytest
 def test_file_checksum(file_factory):
     # Use "build" strategy, so database is not required
     file = file_factory.build()
-    file.compute_checksum()
-    assert file.checksum is not None
+    file.compute_sha512()
+    assert len(file.sha512) == 128
 
 
 @pytest.mark.django_db

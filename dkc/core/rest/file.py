@@ -1,43 +1,45 @@
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django_filters import rest_framework as filters
-from rest_framework import serializers, status
+from rest_framework import serializers
 from rest_framework.decorators import action
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from dkc.core.models import File
-from dkc.core.rest.user import UserSerializer
-from dkc.core.tasks import file_compute_checksum
+
+from .filtering import ActionSpecificFilterBackend
 
 
 class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
-        fields = ['id', 'name', 'checksum', 'created', 'owner']
-        read_only_fields = ['checksum', 'created']
-
-    owner = UserSerializer()
+        fields = [
+            'id',
+            'name',
+            'description',
+            'content_type',
+            'created',
+            'modified',
+            'owner',
+            'sha512',
+            'size',
+        ]
 
 
 class FileViewSet(ReadOnlyModelViewSet):
     queryset = File.objects.all()
 
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [
+        AllowAny
+        # IsAuthenticatedOrReadOnly
+    ]
     serializer_class = FileSerializer
 
-    filter_backends = [filters.DjangoFilterBackend]
-    filterset_fields = ['name', 'checksum']
+    filter_backends = [ActionSpecificFilterBackend]
+    filterset_fields = ['folder', 'sha512']
 
-    @action(detail=True, methods=['get'])
+    # TODO figure out how to indicate this response type in the OpenAPI schema
+    @action(detail=True)
     def download(self, request, pk=None):
         file = get_object_or_404(File, pk=pk)
         return HttpResponseRedirect(file.blob.url)
-
-    @action(detail=True, methods=['post'])
-    def compute(self, request, pk=None):
-        # Ensure that the file exists, so a non-existent pk isn't dispatched
-        file = get_object_or_404(File, pk=pk)
-        file_compute_checksum.delay(file.pk)
-        return Response('', status=status.HTTP_202_ACCEPTED)
