@@ -1,6 +1,6 @@
 terraform {
   backend "remote" {
-    hostname = "app.terraform.io"
+    hostname     = "app.terraform.io"
     organization = "girder"
 
     workspaces {
@@ -27,13 +27,15 @@ data "heroku_team" "heroku" {
 }
 
 module "django" {
-    source  = "girder/django/heroku"
-    version = "0.5.0"
+  source  = "girder/django/heroku"
+  version = "0.5.0"
 
   project_slug     = "dkc-next"
   route53_zone_id  = data.aws_route53_zone.domain.zone_id
   heroku_team_name = data.heroku_team.heroku.name
   subdomain_name   = "dkc-next"
+
+  django_cors_origin_whitelist = ["https://${aws_route53_record.web.fqdn}"]
 }
 
 resource "aws_route53_record" "web" {
