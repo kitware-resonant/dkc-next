@@ -35,3 +35,11 @@ module "django" {
   heroku_team_name = data.heroku_team.heroku.name
   subdomain_name   = "dkc-next"
 }
+
+resource "aws_route53_record" "web" {
+  zone_id = data.aws_route53_zone.domain.zone_id
+  name    = "dkc-next-web"
+  type    = "CNAME"
+  ttl     = "300"
+  records = ["dkc-next.netlify.app"]
+}
