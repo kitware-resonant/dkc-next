@@ -41,3 +41,4 @@ class ProductionConfiguration(DkcConfig, ProductionBaseConfiguration):
 
 class HerokuProductionConfiguration(DkcConfig, HerokuProductionBaseConfiguration):
     pass
+    DEBUG = True
