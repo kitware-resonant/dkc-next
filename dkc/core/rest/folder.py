@@ -7,34 +7,13 @@ from rest_framework.viewsets import ModelViewSet
 
 from dkc.core.models import Folder
 
+from .filtering import ActionSpecificFilterBackend, IntegerOrNullFilter
+
 
 class FolderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Folder
         fields = ['id', 'name', 'description', 'parent', 'created', 'modified']
-
-
-class IntegerOrNullFilter(filters.Filter):
-    """
-    Supports filtering by either an integer or null.
-
-    This allows clients to use a special value of "null" to filter for null values,
-    otherwise it parses the value to an integer.
-    """
-
-    def filter(self, qs, value: str):
-        if value == 'null':
-            return qs.filter(**{f'{self.field_name}__isnull': True})
-        try:
-            value = int(value)
-        except ValueError:
-            raise serializers.ValidationError(
-                {
-                    self.field_name: ['May only be an integer or "null".'],
-                }
-            )
-
-        return qs.filter(**{self.field_name: value})
 
 
 class FoldersFilterSet(filters.FilterSet):
@@ -50,14 +29,8 @@ class FolderViewSet(ModelViewSet):
     ]
     serializer_class = FolderSerializer
 
-    filter_backends = [filters.DjangoFilterBackend]
+    filter_backends = [ActionSpecificFilterBackend]
     filterset_class = FoldersFilterSet
-
-    def filter_queryset(self, queryset):
-        # Only apply the filterset class on the list endpoint
-        if self.action != 'list':
-            self.filterset_class = None
-        return super().filter_queryset(queryset)
 
     @action(detail=True)
     def path(self, request, pk=None):
