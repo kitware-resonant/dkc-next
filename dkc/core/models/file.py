@@ -37,6 +37,7 @@ class File(TimeStampedModel, models.Model):
     blob = models.FileField()
     size = models.PositiveBigIntegerField(editable=False)
     sha512 = models.CharField(max_length=128, blank=True, default='', db_index=True, editable=False)
+    user_metadata = models.JSONField(default=dict)
 
     creator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
     folder = models.ForeignKey(Folder, on_delete=models.CASCADE, related_name='files')
