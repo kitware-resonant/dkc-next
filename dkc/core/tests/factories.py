@@ -30,5 +30,5 @@ class FileFactory(factory.django.DjangoModelFactory):
     name = factory.Faker('file_name')
     description = factory.Faker('paragraph')
     blob = factory.django.FileField(data=b'fakefilebytes', filename='fake.txt')
-    owner = factory.SubFactory(UserFactory)
+    creator = factory.SubFactory(UserFactory)
     folder = factory.SubFactory(FolderFactory)

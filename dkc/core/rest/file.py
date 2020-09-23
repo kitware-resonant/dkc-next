@@ -20,7 +20,7 @@ class FileSerializer(serializers.ModelSerializer):
             'content_type',
             'created',
             'modified',
-            'owner',
+            'creator',
             'sha512',
             'size',
         ]

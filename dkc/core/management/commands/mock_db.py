@@ -11,7 +11,7 @@ def _populate_subtree(
 ) -> None:
     if depth == 0:
         for _ in range(files):
-            FileFactory(folder=folder, owner=None)
+            FileFactory(folder=folder, creator=None)
         return
 
     for _ in range(branching):

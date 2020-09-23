@@ -35,10 +35,10 @@ class File(TimeStampedModel, models.Model):
     description = models.TextField(max_length=3000, blank=True)
     content_type = models.CharField(max_length=255, default='application/octet-stream')
     blob = models.FileField()
-    size = models.BigIntegerField(editable=False)
+    size = models.PositiveBigIntegerField(editable=False)
     sha512 = models.CharField(max_length=128, blank=True, default='', db_index=True, editable=False)
 
-    owner = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    creator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
     folder = models.ForeignKey(Folder, on_delete=models.CASCADE, related_name='files')
 
     @property
