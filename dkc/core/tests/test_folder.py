@@ -67,16 +67,18 @@ def test_folder_sibling_names_unique(folder, folder_factory):
 @pytest.mark.django_db
 def test_folder_sibling_names_unique_files(file, folder_factory):
     escaped = re.escape(file.name)
+    sibling_folder = folder_factory.build(parent=file.folder, name=file.name)
     with pytest.raises(
-        ValidationError, match=f'There is already a file here with the name "{escaped}"\\.'
+        ValidationError, match=fr'There is already a file here with the name "{escaped}"\.'
     ):
-        folder_factory.build(parent=file.folder, name=file.name).full_clean()
+        sibling_folder.full_clean()
 
 
 @pytest.mark.django_db
 def test_root_folder_names_unique(folder, folder_factory):
+    other_root = folder_factory.build(name=folder.name)
     with pytest.raises(IntegrityError):
-        folder_factory(name=folder.name)
+        other_root.save()
 
 
 @pytest.mark.django_db

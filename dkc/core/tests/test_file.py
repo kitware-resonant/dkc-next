@@ -20,17 +20,19 @@ def test_file_rest_retrieve(api_client, file):
 
 @pytest.mark.django_db
 def test_file_sibling_names_unique(file, file_factory):
-    with pytest.raises(IntegrityError, match='Key .* already exists.'):
-        file_factory(folder=file.folder, name=file.name)
+    sibling = file_factory.build(folder=file.folder, name=file.name, creator=None)
+    with pytest.raises(IntegrityError, match=r'Key .* already exists\.'):
+        sibling.save()
 
 
 @pytest.mark.django_db
 def test_file_sibling_names_unique_folders(folder, folder_factory, file_factory):
     folder_factory(parent=folder, name='unique')
+    sibling_file = file_factory.build(folder=folder, name='unique')
     with pytest.raises(
-        ValidationError, match='There is already a folder here with the name "unique".'
+        ValidationError, match=r'There is already a folder here with the name "unique"\.'
     ):
-        file_factory.build(folder=folder, name='unique').full_clean()
+        sibling_file.full_clean()
 
 
 @pytest.mark.django_db
