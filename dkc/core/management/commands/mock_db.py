@@ -3,20 +3,25 @@ import typing
 import djclick as click
 
 from dkc.core.models.folder import Folder
-from dkc.core.tests.factories import FolderFactory
+from dkc.core.tests.factories import FileFactory, FolderFactory
 
 
-def _populate_subtree(folder: typing.Optional[Folder], depth: int, branching: int) -> None:
+def _populate_subtree(
+    folder: typing.Optional[Folder], depth: int, branching: int, files: int
+) -> None:
     if depth == 0:
+        for _ in range(files):
+            FileFactory(folder=folder, creator=None)
         return
 
     for _ in range(branching):
         child: Folder = FolderFactory(parent=folder)
-        _populate_subtree(child, depth - 1, branching)
+        _populate_subtree(child, depth - 1, branching, files)
 
 
 @click.command()
 @click.argument('depth', type=click.INT)
 @click.argument('branching', type=click.INT)
-def command(depth: int, branching: int):
-    _populate_subtree(None, depth, branching)
+@click.argument('files', type=click.INT, default=0)
+def command(depth: int, branching: int, files: int):
+    _populate_subtree(None, depth, branching, files)

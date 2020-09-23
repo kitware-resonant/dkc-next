@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List
 
 from django.core import validators
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
@@ -14,9 +15,7 @@ class Folder(TimeStampedModel, models.Model):
     MAX_TREE_HEIGHT = 30
 
     class Meta:
-        indexes = [
-            models.Index(fields=['parent', 'name']),
-        ]
+        indexes = [models.Index(fields=['parent', 'name'])]
         ordering = ['name']
         constraints = [
             models.constraints.UniqueConstraint(
@@ -71,6 +70,13 @@ class Folder(TimeStampedModel, models.Model):
                 raise MaxFolderDepthExceeded()
 
         return path[::-1]
+
+    def clean(self) -> None:
+        if self.parent and self.parent.files.filter(name=self.name).exists():
+            raise ValidationError(
+                {'name': f'There is already a file here with the name "{self.name}".'}
+            )
+        super().clean()
 
 
 @receiver(models.signals.pre_save, sender=Folder)
