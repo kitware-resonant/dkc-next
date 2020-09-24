@@ -9,6 +9,7 @@ from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
 
 from dkc.core.exceptions import MaxFolderDepthExceeded
+from dkc.core.models.metadata import UserMetadataField
 
 
 class Folder(TimeStampedModel, models.Model):
@@ -46,7 +47,7 @@ class Folder(TimeStampedModel, models.Model):
 
     # TODO: What max_length?
     description = models.TextField(max_length=3000, blank=True)
-    user_metadata = models.JSONField(default=dict)
+    user_metadata = UserMetadataField()
 
     # # TODO: owner on_delete policy?
     # owner = models.ForeignKey(User, on_delete=models.CASCADE)
