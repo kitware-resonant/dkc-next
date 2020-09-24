@@ -3,6 +3,8 @@ import factory.django
 
 from dkc.core.models import File, Folder
 
+_metadata_faker = factory.Faker('pydict', nb_elements=5, value_types=[str, int, float, bool])
+
 
 class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
@@ -21,6 +23,7 @@ class FolderFactory(factory.django.DjangoModelFactory):
     name = factory.Faker('word')
     description = factory.Faker('paragraph')
     parent = None
+    user_metadata = _metadata_faker
 
 
 class FileFactory(factory.django.DjangoModelFactory):
@@ -32,3 +35,4 @@ class FileFactory(factory.django.DjangoModelFactory):
     blob = factory.django.FileField(data=b'fakefilebytes', filename='fake.txt')
     creator = factory.SubFactory(UserFactory)
     folder = factory.SubFactory(FolderFactory)
+    user_metadata = _metadata_faker
