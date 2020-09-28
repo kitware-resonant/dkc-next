@@ -44,7 +44,7 @@ setup(
         'django-extensions',
         'django-filter',
         'django-girders',
-        'djangorestframework',
+        'djangorestframework<3.12',
         'drf-extensions',
         'drf-yasg',
         'psycopg2',
