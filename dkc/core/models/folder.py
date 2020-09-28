@@ -53,10 +53,10 @@ class Folder(TimeStampedModel, models.Model):
     # owner = models.ForeignKey(User, on_delete=models.CASCADE)
 
     parent = models.ForeignKey(
-        'self', on_delete=models.CASCADE, null=True, related_name='child_folders'
+        'self', on_delete=models.CASCADE, blank=True, null=True, related_name='child_folders'
     )
     root_folder = models.ForeignKey(
-        'self', on_delete=models.DO_NOTHING, null=True, related_name='+'
+        'self', on_delete=models.DO_NOTHING, blank=True, null=True, related_name='+'
     )
 
     # # Prevent deletion of quotas while a folder references them

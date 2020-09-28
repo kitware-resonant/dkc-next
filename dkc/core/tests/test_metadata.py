@@ -18,6 +18,7 @@ def test_invalid_metadata(metadata, folder_factory):
     folder = folder_factory.build(user_metadata=metadata)
     with pytest.raises(ValidationError) as err:
         folder.full_clean()
+    assert len(err.value.error_dict['user_metadata']) == 1
     assert err.value.error_dict['user_metadata'][0].message == 'Must be a JSON Object.'
 
 
@@ -31,7 +32,4 @@ def test_invalid_metadata(metadata, folder_factory):
     ],
 )
 def test_valid_metadata(metadata, folder_factory):
-    folder = folder_factory.build(user_metadata=metadata)
-    with pytest.raises(ValidationError) as err:
-        folder.full_clean()
-    assert 'user_metadata' not in err.value.error_dict
+    folder_factory.build(user_metadata=metadata).full_clean()
