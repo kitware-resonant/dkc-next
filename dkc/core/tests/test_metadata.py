@@ -32,4 +32,5 @@ def test_invalid_metadata(metadata, folder_factory):
     ],
 )
 def test_valid_metadata(metadata, folder_factory):
-    folder_factory.build(user_metadata=metadata).full_clean()
+    folder = folder_factory.build(user_metadata=metadata)
+    folder.full_clean()
