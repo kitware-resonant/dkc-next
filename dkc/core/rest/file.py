@@ -1,9 +1,9 @@
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers
+from rest_framework import parsers, serializers
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
-from rest_framework.viewsets import ReadOnlyModelViewSet
+from rest_framework.viewsets import ModelViewSet
 
 from dkc.core.models import File
 
@@ -16,6 +16,8 @@ class FileSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'name',
+            'blob',
+            'folder',
             'description',
             'content_type',
             'created',
@@ -26,13 +28,15 @@ class FileSerializer(serializers.ModelSerializer):
         ]
 
 
-class FileViewSet(ReadOnlyModelViewSet):
+class FileViewSet(ModelViewSet):
     queryset = File.objects.all()
 
     permission_classes = [
         AllowAny
         # IsAuthenticatedOrReadOnly
     ]
+    # TODO remove multipart parser once we are using S3FileField
+    parser_classes = [parsers.JSONParser, parsers.MultiPartParser]
     serializer_class = FileSerializer
 
     filter_backends = [ActionSpecificFilterBackend]

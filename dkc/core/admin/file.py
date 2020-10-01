@@ -25,6 +25,7 @@ class FileAdmin(admin.ModelAdmin):
         'name',
         'description',
         'user_metadata',
+        'content_type',
         'blob',
         'sha512',
         'size',

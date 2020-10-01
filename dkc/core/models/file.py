@@ -40,7 +40,7 @@ class File(TimeStampedModel, models.Model):
     sha512 = models.CharField(max_length=128, blank=True, default='', db_index=True, editable=False)
     user_metadata = UserMetadataField()
 
-    creator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL)
+    creator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, editable=False)
     folder = models.ForeignKey(Folder, on_delete=models.CASCADE, related_name='files')
 
     @property
