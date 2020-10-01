@@ -21,9 +21,27 @@ class FileAdmin(admin.ModelAdmin):
     search_fields = ['name']
     actions = ['compute_sha512']
 
-    fields = ['name', 'blob', 'sha512', 'size', 'creator', 'created', 'modified']
-    autocomplete_fields = ['creator']
-    readonly_fields = ['sha512', 'size', 'created', 'modified', 'folder']
+    fields = [
+        'name',
+        'description',
+        'user_metadata',
+        'blob',
+        'sha512',
+        'size',
+        'creator',
+        'created',
+        'modified',
+        'folder',
+    ]
+    autocomplete_fields = ['folder']
+
+    def get_readonly_fields(self, request, obj=None):
+        fields = ['sha512', 'size', 'created', 'modified', 'creator']
+        # Allow setting of folder only on initial creation
+        if obj is None:
+            return fields
+        else:
+            return fields + ['folder']
 
     @admin_display(
         short_description='Checksum prefix',
