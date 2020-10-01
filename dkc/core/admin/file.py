@@ -37,6 +37,7 @@ class FileAdmin(admin.ModelAdmin):
 
     def get_readonly_fields(self, request, obj=None):
         fields = ['sha512', 'size', 'created', 'modified', 'creator']
+        # Allow setting of folder only on initial creation
         if obj is None:
             return fields
         else:
