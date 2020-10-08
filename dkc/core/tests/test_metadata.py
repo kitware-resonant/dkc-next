@@ -22,6 +22,7 @@ def test_invalid_metadata(metadata, folder_factory):
     assert err.value.error_dict['user_metadata'][0].message == 'Must be a JSON Object.'
 
 
+@pytest.mark.django_db
 @pytest.mark.parametrize(
     'metadata',
     [
@@ -32,5 +33,5 @@ def test_invalid_metadata(metadata, folder_factory):
     ],
 )
 def test_valid_metadata(metadata, folder_factory):
-    folder = folder_factory.build(user_metadata=metadata)
+    folder = folder_factory(user_metadata=metadata)
     folder.full_clean()

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Tuple
 
+from django.contrib.auth.models import User
 from django.core import validators
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -45,12 +46,10 @@ class Folder(TimeStampedModel, models.Model):
         editable=False,
     )
 
-    # TODO: What max_length?
     description = models.TextField(max_length=3000, blank=True)
     user_metadata = UserMetadataField()
 
-    # # TODO: owner on_delete policy?
-    # owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE)
 
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, blank=True, null=True, related_name='child_folders'
@@ -59,8 +58,18 @@ class Folder(TimeStampedModel, models.Model):
         'self', on_delete=models.DO_NOTHING, blank=True, null=True, related_name='+'
     )
 
-    # # Prevent deletion of quotas while a folder references them
-    # quota = models.ForeignKey(Quota, on_delete=models.PROTECT)
+    def resolve_quota(self) -> Tuple[int, int]:
+        """
+        Resolve the quota for a given folder.
+
+        Returns the value as a tuple of the form (bytes_used, bytes_allowed).
+        """
+        folder_quota = self.root_folder.quota
+        if folder_quota.allowed is None:
+            # This indicates that this folder's quota is its owning user's quota
+            owner_quota = self.root_folder.owner.quota
+            return owner_quota.used, owner_quota.allowed
+        return folder_quota.used, folder_quota.allowed
 
     def path_to_root(self) -> List[Folder]:
         folder = self

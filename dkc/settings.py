@@ -22,6 +22,8 @@ class DkcConfig(ConfigMixin):
         'DEFAULT_PAGINATION_CLASS': 'dkc.core.rest.pagination.BoundedLimitOffsetPagination',
     }
 
+    DKC_DEFAULT_USER_QUOTA = 3 << 30  # 3 GB
+
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
         configuration.INSTALLED_APPS += ['dkc.core.apps.CoreConfig']

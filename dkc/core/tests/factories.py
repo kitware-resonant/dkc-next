@@ -24,6 +24,7 @@ class FolderFactory(factory.django.DjangoModelFactory):
     description = factory.Faker('paragraph')
     parent = None
     user_metadata = _metadata_faker
+    owner = factory.SubFactory(UserFactory)
 
 
 class FileFactory(factory.django.DjangoModelFactory):
