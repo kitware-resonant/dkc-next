@@ -5,7 +5,7 @@ from typing import List, Tuple
 from django.contrib.auth.models import User
 from django.core import validators
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
 
@@ -70,6 +70,44 @@ class Folder(TimeStampedModel, models.Model):
             owner_quota = self.root_folder.owner.quota
             return owner_quota.used, owner_quota.allowed
         return folder_quota.used, folder_quota.allowed
+
+    @transaction.atomic
+    def increment_quota(self, amount: int) -> None:
+        """
+        Increments the quota(s) associated with this folder.
+
+        This function increments (or decrements, if ``amount`` is negative) the usage
+        values associated with this folder. The used amount tracked on the folder itself is
+        incremented. Additionally, if this folder has a user-assigned quota, that quota
+        usage value is also incremented. If either of these increments would exceed the max
+        allotment for this folder, a ``ValidationError`` is raised and the transaction
+        is rolled back.
+        """
+        if amount == 0:
+            return
+
+        folder_quota = self.root_folder.quota
+        folder_quota.used = models.F('used') + amount
+        folder_quota.save(update_fields=['used'])
+
+        if folder_quota.allowed is None:
+            user_quota = self.root_folder.owner.quota
+            user_quota.used = models.F('used') + amount
+            user_quota.save(update_fields=['used'])
+            if amount > 0:
+                user_quota.refresh_from_db()
+                if user_quota.used > user_quota.allowed:
+                    raise ValidationError(
+                        'User size quota would be exceeded: '
+                        f'{user_quota.used}B > {user_quota.allowed}B.'
+                    )
+        elif amount > 0:
+            folder_quota.refresh_from_db()
+            if folder_quota.used > folder_quota.allowed:
+                raise ValidationError(
+                    'Root folder size quota would be exceeded: '
+                    f'{folder_quota.used}B > {folder_quota.allowed}B.'
+                )
 
     def path_to_root(self) -> List[Folder]:
         folder = self
