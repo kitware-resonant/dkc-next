@@ -127,6 +127,9 @@ class Folder(TimeStampedModel, models.Model):
             )
         super().clean()
 
+    def __str__(self) -> str:
+        return f'{self.name} ({self.id})'
+
 
 @receiver(models.signals.pre_save, sender=Folder)
 def _folder_pre_save(sender, instance, *args, **kwargs):

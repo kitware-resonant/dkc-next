@@ -13,11 +13,14 @@ class FolderQuota(models.Model):
         Folder, primary_key=True, on_delete=models.CASCADE, related_name='quota'
     )
     used = models.PositiveBigIntegerField(default=0)
-    allowed = models.PositiveBigIntegerField(null=True)
+    allowed = models.PositiveBigIntegerField(null=True, blank=True)
 
     def clean(self) -> None:
         if self.folder.parent is not None:
-            raise ValidationError({'name': 'Only root folders may have quotas.'})
+            raise ValidationError({'folder': 'Only root folders may have quotas.'})
+
+        if self.allowed is not None and self.used > self.allowed:
+            raise ValidationError({'allowed': 'Must not be less than used amount.'})
 
 
 @receiver(post_save, sender=Folder)
