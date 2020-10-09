@@ -1,7 +1,7 @@
 from typing import Type
 
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -21,6 +21,22 @@ class FolderQuota(models.Model):
 
         if self.allowed is not None and self.used > self.allowed:
             raise ValidationError({'allowed': 'Must not be less than used amount.'})
+
+    @transaction.atomic
+    def save(self, *args, **kwargs) -> None:
+        if self.used and self.pk and self.allowed is not None:
+            # Detect if this is a folder being given a custom quota when it previously had none.
+            # If so, we must transfer that amount from the owner's usage.
+            stored = FolderQuota.objects.get(pk=self.pk)
+            if stored.allowed is None:
+                user_quota = self.folder.owner.quota
+                user_quota.used = models.F('used') - self.used
+                user_quota.save(update_fields=['used'])
+                user_quota.refresh_from_db()
+        # TODO should we also support a folder going from having a quota to being put back
+        # toward a user quota? Never needed that case before, but might be good for consistency.
+
+        super().save(*args, **kwargs)
 
 
 @receiver(post_save, sender=Folder)

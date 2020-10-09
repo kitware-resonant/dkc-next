@@ -89,20 +89,20 @@ class Folder(TimeStampedModel, models.Model):
         folder_quota = self.root_folder.quota
         folder_quota.used = models.F('used') + amount
         folder_quota.save(update_fields=['used'])
+        folder_quota.refresh_from_db()
 
         if folder_quota.allowed is None:
             user_quota = self.root_folder.owner.quota
             user_quota.used = models.F('used') + amount
             user_quota.save(update_fields=['used'])
+            user_quota.refresh_from_db()
             if amount > 0:
-                user_quota.refresh_from_db()
                 if user_quota.used > user_quota.allowed:
                     raise ValidationError(
                         'User size quota would be exceeded: '
                         f'{user_quota.used}B > {user_quota.allowed}B.'
                     )
         elif amount > 0:
-            folder_quota.refresh_from_db()
             if folder_quota.used > folder_quota.allowed:
                 raise ValidationError(
                     'Root folder size quota would be exceeded: '

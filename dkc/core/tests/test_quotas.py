@@ -5,13 +5,6 @@ import pytest
 from dkc.core.models.folder import Folder
 
 
-def _assert_used_amount(root_folder: Folder, amount: int) -> None:
-    root_folder.owner.quota.refresh_from_db()
-    root_folder.quota.refresh_from_db()
-    assert root_folder.owner.quota.used == amount
-    assert root_folder.quota.used == amount
-
-
 @pytest.mark.django_db
 def test_user_creation_creates_quota(user):
     assert user.quota.used == 0
@@ -52,13 +45,15 @@ def test_non_root_folder_resolve_quota(folder, folder_factory):
 @pytest.mark.django_db
 def test_file_creation_increments_usage(file):
     assert file.size > 0
-    _assert_used_amount(file.folder.root_folder, file.size)
+    assert file.folder.root_folder.owner.quota.used == file.size
+    assert file.folder.root_folder.quota.used == file.size
 
 
 @pytest.mark.django_db
 def test_file_deletion_decrements_usage(file):
     file.delete()
-    _assert_used_amount(file.folder.root_folder, 0)
+    assert file.folder.root_folder.owner.quota.used == 0
+    assert file.folder.root_folder.quota.used == 0
 
 
 @pytest.mark.django_db
@@ -66,7 +61,10 @@ def test_user_quota_increment_rollback(folder):
     used, allowed = folder.resolve_quota()
     with pytest.raises(ValidationError, match=r'User size quota would be exceeded'):
         folder.increment_quota(allowed + 1)
-    _assert_used_amount(folder, used)
+    folder.owner.quota.refresh_from_db()
+    folder.quota.refresh_from_db()
+    assert folder.owner.quota.used == used
+    assert folder.quota.used == used
 
 
 @pytest.mark.django_db
@@ -75,7 +73,10 @@ def test_folder_quota_increment_rollback(folder):
     folder.quota.save()
     with pytest.raises(ValidationError, match=r'Root folder size quota would be exceeded'):
         folder.increment_quota(2)
-    _assert_used_amount(folder, 0)
+    folder.owner.quota.refresh_from_db()
+    folder.quota.refresh_from_db()
+    assert folder.owner.quota.used == 0
+    assert folder.quota.used == 0
 
 
 @pytest.mark.django_db
@@ -85,3 +86,13 @@ def test_folder_quota_doesnt_increment_owner_used_amount(folder):
     folder.increment_quota(1)
     assert folder.owner.quota.used == 0
     assert folder.quota.used == 1
+
+
+@pytest.mark.django_db
+def test_folder_ownership_transfer(file):
+    root = file.folder.root_folder
+    assert root.owner.quota.used > 0
+    root.quota.allowed = 1 << 30
+    root.quota.save()
+    root.owner.quota.refresh_from_db()
+    assert root.owner.quota.used == 0
