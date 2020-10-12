@@ -10,6 +10,7 @@ terraform {
 }
 provider "aws" {
   region = "us-east-1"
+  allowed_account_ids = ["417138409483"]
   # Must set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY envvars
 }
 provider "heroku" {
@@ -35,6 +36,9 @@ module "django" {
   heroku_team_name = data.heroku_team.heroku.name
   subdomain_name   = "dkc-next"
 
+  additional_django_vars = {
+    SENTRY_DSN = "https://a9897ae4723d4b0ab90c2856a342ba5a@o267860.ingest.sentry.io/5458971"
+  }
   django_cors_origin_whitelist = ["https://${aws_route53_record.web.fqdn}"]
 }
 
