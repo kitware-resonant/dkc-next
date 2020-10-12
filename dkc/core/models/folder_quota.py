@@ -42,4 +42,4 @@ class FolderQuota(models.Model):
 @receiver(post_save, sender=Folder)
 def _create_root_folder_quota(sender: Type[Folder], instance: Folder, created: bool, **kwargs):
     if created and instance.parent is None:
-        FolderQuota(folder=instance, allowed=None).save()
+        FolderQuota.objects.create(folder=instance, allowed=None)

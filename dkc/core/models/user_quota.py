@@ -27,4 +27,4 @@ class UserQuota(models.Model):
 @receiver(post_save, sender=User)
 def _create_user_quota(sender: Type[User], instance: User, created: bool, **kwargs):
     if created:
-        UserQuota(user=instance).save()
+        UserQuota.objects.create(user=instance)
