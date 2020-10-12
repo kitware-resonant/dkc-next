@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from django_girders.configuration import (
+from composed_configuration import (
     ComposedConfiguration,
     ConfigMixin,
     DevelopmentBaseConfiguration,
@@ -16,7 +16,7 @@ class DkcConfig(ConfigMixin):
     WSGI_APPLICATION = 'dkc.wsgi.application'
     ROOT_URLCONF = 'dkc.urls'
 
-    BASE_DIR = str(Path(__file__).absolute().parent.parent)
+    BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
     REST_FRAMEWORK = {
         'DEFAULT_PAGINATION_CLASS': 'dkc.core.rest.pagination.BoundedLimitOffsetPagination',
