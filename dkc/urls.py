@@ -6,7 +6,6 @@ from drf_yasg2.views import get_schema_view
 from rest_framework import permissions, routers
 
 from dkc.core.rest import FileViewSet, FolderViewSet
-from dkc.core.views import GalleryView, file_summary
 
 router = routers.SimpleRouter(trailing_slash=False)
 router.register(r'files', FileViewSet)
@@ -25,8 +24,6 @@ urlpatterns = [
     path('api/v2/', include(router.urls)),
     path('api/docs/redoc', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger', schema_view.with_ui('swagger'), name='docs-swagger'),
-    path('summary/', file_summary, name='file-summary'),
-    path('gallery/', GalleryView.as_view(), name='gallery'),
 ]
 
 if settings.DEBUG:
