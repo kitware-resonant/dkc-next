@@ -38,6 +38,7 @@ setup(
         'celery',
         'django',
         'django-admin-display',
+        'django-allauth',
         'django-click',
         'django-composed-configuration',
         'django-configurations[database,email]',

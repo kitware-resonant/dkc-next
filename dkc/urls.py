@@ -8,9 +8,9 @@ from rest_framework import permissions, routers
 from dkc.core.rest import FileViewSet, FolderViewSet
 from dkc.core.views import GalleryView, file_summary
 
-rest_router = routers.SimpleRouter(trailing_slash=False)
-rest_router.register(r'files', FileViewSet)
-rest_router.register(r'folders', FolderViewSet)
+router = routers.SimpleRouter(trailing_slash=False)
+router.register(r'files', FileViewSet)
+router.register(r'folders', FolderViewSet)
 
 # OpenAPI generation
 schema_view = get_schema_view(
@@ -20,8 +20,9 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
+    path('accounts/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
-    path('api/v2/', include(rest_router.urls)),
+    path('api/v2/', include(router.urls)),
     path('api/docs/redoc', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger', schema_view.with_ui('swagger'), name='docs-swagger'),
     path('summary/', file_summary, name='file-summary'),
