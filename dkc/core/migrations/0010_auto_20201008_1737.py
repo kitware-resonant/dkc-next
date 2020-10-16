@@ -53,4 +53,9 @@ class Migration(migrations.Migration):
                 default=dkc.core.models.user_quota._default_user_quota
             ),
         ),
+        migrations.AlterField(
+            model_name='folderquota',
+            name='allowed',
+            field=models.PositiveBigIntegerField(blank=True, null=True),
+        ),
     ]
