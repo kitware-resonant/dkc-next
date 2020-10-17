@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django_filters import rest_framework as filters
 from rest_framework import serializers
 from rest_framework.decorators import action
@@ -14,6 +15,12 @@ class FolderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Folder
         fields = ['id', 'name', 'description', 'parent', 'created', 'modified']
+
+    def create(self, validated_data):
+        # TODO uncomment below line once REST auth is working
+        # user = self.context['request'].user
+        user = User.objects.first()  # <- hack for now
+        return Folder.objects.create(owner=user, **validated_data)
 
 
 class FoldersFilterSet(filters.FilterSet):

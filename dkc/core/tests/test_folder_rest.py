@@ -24,11 +24,11 @@ def test_folder_rest_path(api_client, folder, folder_factory):
     assert [f['name'] for f in resp.data] == [folder.name, child.name, grandchild.name]
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
-def test_folder_rest_create(api_client):
-    resp = api_client.post('/api/v2/folders')
-    assert resp.status_code == 200
+def test_folder_rest_create(api_client, user):
+    resp = api_client.post('/api/v2/folders', {'name': 'test'})
+    assert resp.status_code == 201
+    assert isinstance(resp.data['id'], int)
 
 
 @pytest.mark.django_db
