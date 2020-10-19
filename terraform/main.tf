@@ -37,7 +37,7 @@ module "django" {
   subdomain_name   = "dkc-next"
 
   additional_django_vars = {
-    SENTRY_DSN = "https://a9897ae4723d4b0ab90c2856a342ba5a@o267860.ingest.sentry.io/5458971"
+    DJANGO_SENTRY_DSN = "https://a9897ae4723d4b0ab90c2856a342ba5a@o267860.ingest.sentry.io/5458971"
   }
   django_cors_origin_whitelist = ["https://${aws_route53_record.web.fqdn}"]
 }
