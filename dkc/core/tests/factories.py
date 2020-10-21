@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 import factory.django
 
-from dkc.core.models import File, Folder
+from dkc.core.models import File, Folder, Quota
 
 _metadata_faker = factory.Faker('pydict', nb_elements=5, value_types=[str, int, float, bool])
 
@@ -16,6 +16,13 @@ class UserFactory(factory.django.DjangoModelFactory):
     last_name = factory.Faker('last_name')
 
 
+class QuotaFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Quota
+
+    user = None
+
+
 class FolderFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Folder
@@ -25,6 +32,12 @@ class FolderFactory(factory.django.DjangoModelFactory):
     parent = None
     user_metadata = _metadata_faker
     owner = factory.SubFactory(UserFactory)
+
+    quota = factory.Maybe(
+        decider='parent',
+        yes_declaration=None,
+        no_declaration=factory.SubFactory(QuotaFactory),
+    )
 
 
 class FileFactory(factory.django.DjangoModelFactory):

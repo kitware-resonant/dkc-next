@@ -17,9 +17,7 @@ class File(TimeStampedModel, models.Model):
         indexes = [models.Index(fields=['folder', 'name'])]
         ordering = ['name']
         constraints = [
-            models.constraints.UniqueConstraint(
-                fields=['folder', 'name'], name='file_siblings_name_unique'
-            ),
+            models.UniqueConstraint(fields=['folder', 'name'], name='file_siblings_name_unique'),
         ]
 
     name = models.CharField(
@@ -67,10 +65,10 @@ def _file_pre_save(sender, instance, *args, **kwargs):
     instance.size = instance.blob.size
 
     if not instance.pk:  # this is a new file; reserve quota
-        instance.folder.increment_quota(instance.size)
+        instance.folder.effective_quota.increment(instance.size)
     # TODO if we allow changing a file's blob, we also need to update the quota
 
 
 @receiver(models.signals.post_delete, sender=File)
 def _file_post_delete(sender, instance, *args, **kwargs):
-    instance.folder.increment_quota(-instance.size)
+    instance.folder.effective_quota.increment(-instance.size)

@@ -20,7 +20,7 @@ class FolderSerializer(serializers.ModelSerializer):
         # TODO uncomment below line once REST auth is working
         # user = self.context['request'].user
         user = User.objects.first()  # <- hack for now
-        return Folder.objects.create(owner=user, **validated_data)
+        return Folder.objects.create(owner=user, quota=user.quota, **validated_data)
 
 
 class FoldersFilterSet(filters.FilterSet):

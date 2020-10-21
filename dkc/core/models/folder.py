@@ -1,16 +1,18 @@
 from __future__ import annotations
 
-from typing import List, Tuple
+from typing import List
 
 from django.contrib.auth.models import User
 from django.core import validators
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.db import models
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
 
 from dkc.core.exceptions import MaxFolderDepthExceeded
 from dkc.core.models.metadata import UserMetadataField
+
+from .quota import Quota
 
 
 class Folder(TimeStampedModel, models.Model):
@@ -20,11 +22,16 @@ class Folder(TimeStampedModel, models.Model):
         indexes = [models.Index(fields=['parent', 'name'])]
         ordering = ['name']
         constraints = [
-            models.constraints.UniqueConstraint(
-                fields=['parent', 'name'], name='folder_siblings_name_unique'
-            ),
-            models.constraints.UniqueConstraint(
+            models.UniqueConstraint(fields=['parent', 'name'], name='folder_siblings_name_unique'),
+            models.UniqueConstraint(
                 fields=['name'], condition=models.Q(parent=None), name='root_folder_name_unique'
+            ),
+            models.CheckConstraint(
+                check=(
+                    (models.Q(parent__isnull=True) & models.Q(quota__isnull=False))
+                    | (models.Q(parent__isnull=False) & models.Q(quota__isnull=True))
+                ),
+                name='root_quota_not_null',
             ),
         ]
 
@@ -49,7 +56,7 @@ class Folder(TimeStampedModel, models.Model):
     description = models.TextField(max_length=3000, blank=True)
     user_metadata = UserMetadataField()
 
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    used = models.PositiveBigIntegerField(default=0)
 
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, blank=True, null=True, related_name='child_folders'
@@ -58,56 +65,19 @@ class Folder(TimeStampedModel, models.Model):
         'self', on_delete=models.DO_NOTHING, blank=True, null=True, related_name='+'
     )
 
-    def resolve_quota(self) -> Tuple[int, int]:
-        """
-        Resolve the quota for a given folder.
+    # Prevent deletion of User if it has Folders referencing it
+    owner = models.ForeignKey(User, on_delete=models.PROTECT)
 
-        Returns the value as a tuple of the form (bytes_used, bytes_allowed).
-        """
-        folder_quota = self.root_folder.quota
-        if folder_quota.allowed is None:
-            # This indicates that this folder's quota is its owning user's quota
-            owner_quota = self.root_folder.owner.quota
-            return owner_quota.used, owner_quota.allowed
-        return folder_quota.used, folder_quota.allowed
+    # Prevent deletion of a Quota if it has Folders referencing it,
+    # unless Quota is also being deleted implicitly via a permitted CASCADE
+    quota = models.ForeignKey(Quota, null=True, on_delete=models.RESTRICT)
 
-    @transaction.atomic
-    def increment_quota(self, amount: int) -> None:
-        """
-        Increments the quota(s) associated with this folder.
-
-        This function increments (or decrements, if ``amount`` is negative) the usage
-        values associated with this folder. The used amount tracked on the folder itself is
-        incremented. Additionally, if this folder has a user-assigned quota, that quota
-        usage value is also incremented. If either of these increments would exceed the max
-        allotment for this folder, a ``ValidationError`` is raised and the transaction
-        is rolled back.
-        """
-        if amount == 0:
-            return
-
-        folder_quota = self.root_folder.quota
-        folder_quota.used = models.F('used') + amount
-        folder_quota.save(update_fields=['used'])
-        folder_quota.refresh_from_db()
-
-        if folder_quota.allowed is None:
-            user_quota = self.root_folder.owner.quota
-            user_quota.used = models.F('used') + amount
-            user_quota.save(update_fields=['used'])
-            user_quota.refresh_from_db()
-            if amount > 0:
-                if user_quota.used > user_quota.allowed:
-                    raise ValidationError(
-                        'User size quota would be exceeded: '
-                        f'{user_quota.used}B > {user_quota.allowed}B.'
-                    )
-        elif amount > 0:
-            if folder_quota.used > folder_quota.allowed:
-                raise ValidationError(
-                    'Root folder size quota would be exceeded: '
-                    f'{folder_quota.used}B > {folder_quota.allowed}B.'
-                )
+    @property
+    def effective_quota(self) -> Quota:
+        if self.parent is None:
+            # Optimization for root folder
+            return self.quota
+        return self.root_folder.quota
 
     def path_to_root(self) -> List[Folder]:
         folder = self

@@ -77,7 +77,9 @@ def test_folder_sibling_names_unique_files(file, folder_factory):
 @pytest.mark.django_db
 def test_root_folder_names_unique(folder, folder_factory):
     other_root = folder_factory.build(name=folder.name)
-    other_root.owner.save()  # Make sure user exists in database first
+    # Make sure foreign key references exist in database first
+    other_root.owner.save()
+    other_root.quota.save()
     with pytest.raises(IntegrityError):
         other_root.save()
 

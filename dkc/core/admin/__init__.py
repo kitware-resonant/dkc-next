@@ -1,6 +1,5 @@
 from .file import FileAdmin
 from .folder import FolderAdmin
-from .folder_quota import FolderQuotaAdmin
-from .user_quota import UserQuotaAdmin
+from .quota import QuotaAdmin
 
-__all__ = ['FileAdmin', 'FolderAdmin', 'FolderQuotaAdmin', 'UserQuotaAdmin']
+__all__ = ['FileAdmin', 'FolderAdmin', 'QuotaAdmin']
