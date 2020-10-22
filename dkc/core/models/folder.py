@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Type
 
 from django.core import validators
 from django.core.exceptions import ValidationError
@@ -82,7 +82,7 @@ class Folder(TimeStampedModel, models.Model):
 
 
 @receiver(models.signals.pre_save, sender=Folder)
-def _folder_pre_save(sender, instance, *args, **kwargs):
+def _folder_pre_save(sender: Type[Folder], instance: Folder, **kwargs):
     if instance.depth is None:
         if instance.parent is None:
             instance.depth = 0
@@ -96,7 +96,7 @@ def _folder_pre_save(sender, instance, *args, **kwargs):
 
 
 @receiver(models.signals.post_save, sender=Folder)
-def _folder_post_save(sender, instance, *args, **kwargs):
+def _folder_post_save(sender: Type[Folder], instance: Folder, created: bool, **kwargs):
     if instance.parent is None and instance.root_folder is None:
         instance.root_folder = instance
         instance.save()
