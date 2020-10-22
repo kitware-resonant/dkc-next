@@ -61,6 +61,6 @@ class File(TimeStampedModel, models.Model):
 
 
 @receiver(models.signals.pre_save, sender=File)
-def _folder_pre_save(sender: Type[File], instance: File, **kwargs):
+def _file_pre_save(sender: Type[File], instance: File, **kwargs):
     # TODO this is where we might handle quotas
     instance.size = instance.blob.size
