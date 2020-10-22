@@ -50,6 +50,7 @@ setup(
         'djangorestframework',
         'drf-extensions',
         'drf-yasg2',
+        'humanize',
         'psycopg2',
         'rich',
         'whitenoise[brotli]',
