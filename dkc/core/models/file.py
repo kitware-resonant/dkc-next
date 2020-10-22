@@ -1,5 +1,5 @@
 import hashlib
-from typing import Optional
+from typing import Optional, Type
 
 from django.contrib.auth.models import User
 from django.core import validators
@@ -17,9 +17,7 @@ class File(TimeStampedModel, models.Model):
         indexes = [models.Index(fields=['folder', 'name'])]
         ordering = ['name']
         constraints = [
-            models.constraints.UniqueConstraint(
-                fields=['folder', 'name'], name='file_siblings_name_unique'
-            ),
+            models.UniqueConstraint(fields=['folder', 'name'], name='file_siblings_name_unique'),
         ]
 
     name = models.CharField(
@@ -63,6 +61,6 @@ class File(TimeStampedModel, models.Model):
 
 
 @receiver(models.signals.pre_save, sender=File)
-def _file_pre_save(sender, instance, *args, **kwargs):
+def _folder_pre_save(sender: Type[File], instance: File, **kwargs):
     # TODO this is where we might handle quotas
     instance.size = instance.blob.size
