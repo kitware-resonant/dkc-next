@@ -71,6 +71,7 @@ class Folder(TimeStampedModel, models.Model):
         Returns a RawQuerySet that provides the path up the tree, starting with this folder
         and going all the way to the root.
         """
+        # Using LIMIT ensures this will terminate if a cycle erroneously exists
         return Folder.objects.raw(
             'WITH RECURSIVE ancestors AS ('
             'SELECT * FROM core_folder WHERE id=%s'
