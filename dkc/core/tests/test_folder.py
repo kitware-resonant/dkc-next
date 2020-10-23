@@ -35,11 +35,11 @@ def test_is_root_child(folder_factory):
     assert child.is_root is False
 
 
-def test_iter_ancestors(folder_factory):
-    folder = folder_factory.build()
-    child = folder_factory.build(parent=folder)
-    grandchild = folder_factory.build(parent=child)
-    assert list(grandchild.iter_ancestors()) == [grandchild, child, folder]
+@pytest.mark.django_db
+def test_ancestors(folder, folder_factory):
+    child = folder_factory(parent=folder)
+    grandchild = folder_factory(parent=child)
+    assert list(grandchild.ancestors) == [grandchild, child, folder]
 
 
 @pytest.mark.django_db
