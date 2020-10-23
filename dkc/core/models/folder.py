@@ -10,8 +10,9 @@ from django_extensions.db.models import TimeStampedModel
 
 from dkc.core.models.metadata import UserMetadataField
 
-MAX_DEPTH = 30
+from .tree import Tree
 
+MAX_DEPTH = 30
 
 class Folder(TimeStampedModel, models.Model):
     class Meta:
@@ -55,9 +56,8 @@ class Folder(TimeStampedModel, models.Model):
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, blank=True, null=True, related_name='child_folders'
     )
-    root_folder = models.ForeignKey(
-        'self', on_delete=models.DO_NOTHING, blank=True, null=True, related_name='+'
-    )
+
+    tree = models.ForeignKey(Tree, on_delete=models.CASCADE, related_name='all_folders')
 
     @property
     def is_root(self) -> bool:
@@ -115,12 +115,12 @@ def _folder_post_init(sender: Type[Folder], instance: Folder, **kwargs):
 
 @receiver(models.signals.pre_save, sender=Folder)
 def _folder_pre_save(sender: Type[Folder], instance: Folder, **kwargs):
-    if instance.root_folder is None and instance.parent is not None:
-        instance.root_folder = instance.parent.root_folder
+    # First created
+    if instance.pk is None:
+        instance.tree = Tree.objects.create() if instance.is_root else instance.parent.tree
 
 
-@receiver(models.signals.post_save, sender=Folder)
-def _folder_post_save(sender: Type[Folder], instance: Folder, created: bool, **kwargs):
-    if instance.is_root and instance.root_folder is None:
-        instance.root_folder = instance
-        instance.save()
+@receiver(models.signals.post_delete, sender=Folder)
+def _folder_post_delete(sender: Type[Folder], instance: Folder, **kwargs):
+    if instance.is_root:
+        instance.tree.delete()
