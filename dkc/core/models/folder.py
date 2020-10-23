@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Type
+from typing import Iterator, Type
 
 from django.core import validators
 from django.core.exceptions import ValidationError
@@ -63,16 +63,12 @@ class Folder(TimeStampedModel, models.Model):
     def is_root(self) -> bool:
         return self.parent is None
 
-    def path_to_root(self) -> List[Folder]:
+    def iter_ancestors(self) -> Iterator[Folder]:
+        """Iterate up to the root of the Folder hierarchy, starting with this Folder."""
         folder = self
-        path = [folder]
-        while not folder.is_root:
+        while folder is not None:
+            yield folder
             folder = folder.parent
-            path.append(folder)
-            if len(path) > self.MAX_TREE_HEIGHT:
-                raise MaxFolderDepthExceeded()
-
-        return path[::-1]
 
     def clean(self) -> None:
         if self.parent and self.parent.files.filter(name=self.name).exists():

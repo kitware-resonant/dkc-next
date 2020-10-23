@@ -35,5 +35,7 @@ class FolderViewSet(ModelViewSet):
     @action(detail=True)
     def path(self, request, pk=None):
         folder = self.get_object()
-        serializer = self.get_serializer(folder.path_to_root(), many=True)
+        # Start with the root folder
+        ancestors = list(folder.iter_ancestors())[::-1]
+        serializer = self.get_serializer(ancestors, many=True)
         return Response(serializer.data)
