@@ -59,13 +59,14 @@ class Folder(TimeStampedModel, models.Model):
         'self', on_delete=models.DO_NOTHING, blank=True, null=True, related_name='+'
     )
 
-    # # Prevent deletion of quotas while a folder references them
-    # quota = models.ForeignKey(Quota, on_delete=models.PROTECT)
+    @property
+    def is_root(self) -> bool:
+        return self.parent is None
 
     def path_to_root(self) -> List[Folder]:
         folder = self
         path = [folder]
-        while folder.parent is not None:
+        while not folder.is_root:
             folder = folder.parent
             path.append(folder)
             if len(path) > self.MAX_TREE_HEIGHT:
@@ -84,7 +85,7 @@ class Folder(TimeStampedModel, models.Model):
 @receiver(models.signals.pre_save, sender=Folder)
 def _folder_pre_save(sender: Type[Folder], instance: Folder, **kwargs):
     if instance.depth is None:
-        if instance.parent is None:
+        if instance.is_root:
             instance.depth = 0
         else:
             instance.depth = instance.parent.depth + 1
@@ -97,6 +98,6 @@ def _folder_pre_save(sender: Type[Folder], instance: Folder, **kwargs):
 
 @receiver(models.signals.post_save, sender=Folder)
 def _folder_post_save(sender: Type[Folder], instance: Folder, created: bool, **kwargs):
-    if instance.parent is None and instance.root_folder is None:
+    if instance.is_root and instance.root_folder is None:
         instance.root_folder = instance
         instance.save()

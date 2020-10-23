@@ -24,6 +24,17 @@ def test_folder_name_invalid(folder_factory):
         folder.full_clean()
 
 
+def test_is_root_root(folder_factory):
+    folder = folder_factory.build()
+    assert folder.is_root is True
+
+
+def test_is_root_child(folder_factory):
+    folder = folder_factory.build()
+    child = folder_factory.build(parent=folder)
+    assert child.is_root is False
+
+
 @pytest.mark.django_db
 def test_root_folder_depth_is_zero(folder):
     assert folder.depth == 0
