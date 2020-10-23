@@ -45,6 +45,8 @@ class Folder(TimeStampedModel, models.Model):
         editable=False,
     )
 
+    size = models.PositiveBigIntegerField(default=0, editable=False)
+
     # TODO: What max_length?
     description = models.TextField(max_length=3000, blank=True)
     user_metadata = UserMetadataField()
@@ -81,6 +83,23 @@ class Folder(TimeStampedModel, models.Model):
             ' SELECT * FROM ancestors LIMIT %s',
             [self.pk, Folder.MAX_TREE_HEIGHT + 1],
         )
+
+    def increment_size(self, amount: int) -> None:
+        """
+        Increment or decrement the Folder size.
+
+        This Folder and all of its ancestors' sizes will be updated atomically. ``amount`` may be
+        negative, but an operation resulting in a negative final size is illegal.
+        """
+        if amount == 0:
+            return
+
+        ancestor_pks = [folder.pk for folder in self.ancestors]
+        Folder.objects.filter(pk__in=ancestor_pks).update(size=(models.F('size') + amount))
+
+        # Update local model with the new size value
+        # Also, discard potential local references to the parent model, as its size is also invalid
+        self.refresh_from_db(fields=['size', 'parent'])
 
     def clean(self) -> None:
         if self.parent and self.parent.files.filter(name=self.name).exists():

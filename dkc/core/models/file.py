@@ -62,5 +62,15 @@ class File(TimeStampedModel, models.Model):
 
 @receiver(models.signals.pre_save, sender=File)
 def _file_pre_save(sender: Type[File], instance: File, **kwargs):
-    # TODO this is where we might handle quotas
-    instance.size = instance.blob.size
+    # TODO if we allow changing a file's blob, we also need to update the size
+
+    if not instance.pk:
+        # TODO: Test how this works in minio
+        instance.size = instance.blob.size
+
+        instance.folder.increment_size(instance.size)
+
+
+@receiver(models.signals.post_delete, sender=File)
+def _file_post_delete(sender: Type[File], instance: File, **kwargs):
+    instance.folder.increment_size(-instance.size)
