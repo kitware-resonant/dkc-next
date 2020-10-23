@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterator, Type
+from typing import Type
 
 from django.core import validators
 from django.core.exceptions import ValidationError
@@ -63,12 +63,24 @@ class Folder(TimeStampedModel, models.Model):
     def is_root(self) -> bool:
         return self.parent is None
 
-    def iter_ancestors(self) -> Iterator[Folder]:
-        """Iterate up to the root of the Folder hierarchy, starting with this Folder."""
-        folder = self
-        while folder is not None:
-            yield folder
-            folder = folder.parent
+    @property
+    def ancestors(self) -> models.query.RawQuerySet[Folder]:
+        """
+        Get the path from this folder to the root folder.
+
+        Returns a RawQuerySet that provides the path up the tree, starting with this folder
+        and going all the way to the root.
+        """
+        # Using LIMIT ensures this will terminate if a cycle erroneously exists
+        return Folder.objects.raw(
+            'WITH RECURSIVE ancestors AS ('
+            'SELECT * FROM core_folder WHERE id=%s'
+            ' UNION ALL'
+            ' SELECT f.* FROM core_folder f JOIN ancestors a ON f.id=a.parent_id'
+            ')'
+            ' SELECT * FROM ancestors LIMIT %s',
+            [self.pk, Folder.MAX_TREE_HEIGHT + 1],
+        )
 
     def clean(self) -> None:
         if self.parent and self.parent.files.filter(name=self.name).exists():
