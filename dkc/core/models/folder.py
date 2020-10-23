@@ -77,8 +77,8 @@ class Folder(TimeStampedModel, models.Model):
             ' UNION ALL'
             ' SELECT f.* FROM core_folder f JOIN ancestors a ON f.id=a.parent_id'
             ')'
-            ' SELECT * FROM ancestors',
-            [self.pk],
+            ' SELECT * FROM ancestors LIMIT %s',
+            [self.pk, Folder.MAX_TREE_HEIGHT + 1],
         )
 
     def clean(self) -> None:
