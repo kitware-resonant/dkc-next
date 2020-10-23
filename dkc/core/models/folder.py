@@ -64,7 +64,7 @@ class Folder(TimeStampedModel, models.Model):
         return self.parent is None
 
     @property
-    def ancestors(self) -> models.query.RawQuerySet:
+    def ancestors(self) -> models.query.RawQuerySet[Folder]:
         """
         Get the path from this folder to the root folder.
 
