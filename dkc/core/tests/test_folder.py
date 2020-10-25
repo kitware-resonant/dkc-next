@@ -102,4 +102,34 @@ def test_root_folder_names_unique(folder, folder_factory):
 @pytest.mark.django_db
 def test_folder_names_not_globally_unique(folder_factory):
     root = folder_factory()
-    folder_factory(name=root.name, parent=root)
+    child = folder_factory(name=root.name, parent=root)
+    assert child
+
+
+@pytest.mark.parametrize('amount', [-10, 0, 10])
+@pytest.mark.django_db
+def test_increment_size(folder_factory, amount):
+    initial_size = 100
+    root = folder_factory(size=initial_size)
+    child = folder_factory(parent=root, size=initial_size)
+    grandchild = folder_factory(parent=child, size=initial_size)
+
+    grandchild.increment_size(amount)
+
+    # Local references to other objects "root", "child" are stale
+    # We can only guarantee integrity from the mutated object
+    new_size = initial_size + amount
+    assert grandchild.size == new_size
+    assert grandchild.parent.size == new_size
+    assert grandchild.parent.parent.size == new_size
+
+
+@pytest.mark.django_db
+def test_increment_size_negative(folder_factory):
+    # Make the root too small
+    root = folder_factory(size=5)
+    child = folder_factory(parent=root, size=10)
+
+    # Increment the child, which tests enforcement across propagation
+    with pytest.raises(IntegrityError, match=r'size'):
+        child.increment_size(-10)
