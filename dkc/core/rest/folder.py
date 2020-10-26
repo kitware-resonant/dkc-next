@@ -13,7 +13,7 @@ from .filtering import ActionSpecificFilterBackend, IntegerOrNullFilter
 class FolderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Folder
-        fields = ['id', 'name', 'description', 'parent', 'created', 'modified']
+        fields = ['id', 'name', 'description', 'parent', 'created', 'modified', 'size']
 
 
 class FoldersFilterSet(filters.FilterSet):
