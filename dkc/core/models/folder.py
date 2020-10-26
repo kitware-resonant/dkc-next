@@ -8,23 +8,21 @@ from django.db import models
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
 
-from dkc.core.exceptions import MaxFolderDepthExceeded
 from dkc.core.models.metadata import UserMetadataField
+
+MAX_DEPTH = 30
 
 
 class Folder(TimeStampedModel, models.Model):
-    MAX_TREE_HEIGHT = 30
-
     class Meta:
         indexes = [models.Index(fields=['parent', 'name'])]
         ordering = ['name']
         constraints = [
-            models.constraints.UniqueConstraint(
-                fields=['parent', 'name'], name='folder_siblings_name_unique'
-            ),
-            models.constraints.UniqueConstraint(
+            models.UniqueConstraint(fields=['parent', 'name'], name='folder_siblings_name_unique'),
+            models.UniqueConstraint(
                 fields=['name'], condition=models.Q(parent=None), name='root_folder_name_unique'
             ),
+            models.CheckConstraint(check=models.Q(depth__lte=MAX_DEPTH), name='folder_max_depth'),
         ]
 
     name = models.CharField(
@@ -40,7 +38,7 @@ class Folder(TimeStampedModel, models.Model):
 
     depth = models.PositiveSmallIntegerField(
         validators=[
-            validators.MaxValueValidator(MAX_TREE_HEIGHT, message='Maximum folder depth exceeded.'),
+            validators.MaxValueValidator(MAX_DEPTH, message='Maximum folder depth exceeded.'),
         ],
         editable=False,
     )
@@ -81,7 +79,7 @@ class Folder(TimeStampedModel, models.Model):
             ' SELECT f.* FROM core_folder f JOIN ancestors a ON f.id=a.parent_id'
             ')'
             ' SELECT * FROM ancestors LIMIT %s',
-            [self.pk, Folder.MAX_TREE_HEIGHT + 1],
+            [self.pk, MAX_DEPTH + 1],
         )
 
     def increment_size(self, amount: int) -> None:
@@ -109,16 +107,14 @@ class Folder(TimeStampedModel, models.Model):
         super().clean()
 
 
+@receiver(models.signals.post_init, sender=Folder)
+def _folder_post_init(sender: Type[Folder], instance: Folder, **kwargs):
+    if instance.depth is None:
+        instance.depth = 0 if instance.is_root else instance.parent.depth + 1
+
+
 @receiver(models.signals.pre_save, sender=Folder)
 def _folder_pre_save(sender: Type[Folder], instance: Folder, **kwargs):
-    if instance.depth is None:
-        if instance.is_root:
-            instance.depth = 0
-        else:
-            instance.depth = instance.parent.depth + 1
-            if instance.depth > Folder.MAX_TREE_HEIGHT:
-                raise MaxFolderDepthExceeded()
-
     if instance.root_folder is None and instance.parent is not None:
         instance.root_folder = instance.parent.root_folder
 
