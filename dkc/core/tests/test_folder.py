@@ -4,15 +4,7 @@ from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 import pytest
 
-from dkc.core.exceptions import MaxFolderDepthExceeded
-from dkc.core.models.folder import Folder
-
-
-@pytest.fixture
-def limited_tree_height():
-    original, Folder.MAX_TREE_HEIGHT = Folder.MAX_TREE_HEIGHT, 3
-    yield Folder.MAX_TREE_HEIGHT
-    Folder.MAX_TREE_HEIGHT = original
+from dkc.core.models.folder import MAX_DEPTH
 
 
 def test_folder_name_invalid(folder_factory):
@@ -54,12 +46,22 @@ def test_child_folder_depth_computed(folder, folder_factory):
 
 
 @pytest.mark.django_db
-def test_folder_max_depth_enforced(folder, folder_factory, limited_tree_height):
-    for _ in range(limited_tree_height):
-        folder = folder_factory(parent=folder)
+def test_folder_max_depth(folder_factory):
+    folder = folder_factory(depth=MAX_DEPTH)
+    child = folder_factory.build(parent=folder)
 
-    with pytest.raises(MaxFolderDepthExceeded):
-        folder_factory(parent=folder)
+    with pytest.raises(ValidationError, match=r'Maximum folder depth exceeded.'):
+        child.full_clean()
+
+
+@pytest.mark.django_db
+def test_folder_max_depth_constraint(folder_factory):
+    folder = folder_factory(depth=MAX_DEPTH)
+    child = folder_factory.build(parent=folder)
+
+    with pytest.raises(IntegrityError, match=r'folder_max_depth'):
+        # save without validation
+        child.save()
 
 
 @pytest.mark.django_db
