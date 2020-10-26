@@ -16,6 +16,12 @@ class FolderSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description', 'parent', 'created', 'modified', 'size']
 
 
+class FolderUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Folder
+        fields = ['id', 'name', 'description']
+
+
 class FoldersFilterSet(filters.FilterSet):
     parent = IntegerOrNullFilter(required=True)
 
@@ -27,10 +33,14 @@ class FolderViewSet(ModelViewSet):
         AllowAny,
         # IsAuthenticatedOrReadOnly,
     ]
-    serializer_class = FolderSerializer
 
     filter_backends = [ActionSpecificFilterBackend]
     filterset_class = FoldersFilterSet
+
+    def get_serializer_class(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return FolderUpdateSerializer
+        return FolderSerializer
 
     @action(detail=True)
     def path(self, request, pk=None):
