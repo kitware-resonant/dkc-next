@@ -16,9 +16,8 @@ class FolderSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'description', 'parent', 'created', 'modified', 'size']
 
 
-class FolderUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Folder
+class FolderUpdateSerializer(FolderSerializer):
+    class Meta(FolderSerializer.Meta):
         fields = ['id', 'name', 'description']
 
 
@@ -38,7 +37,7 @@ class FolderViewSet(ModelViewSet):
     filterset_class = FoldersFilterSet
 
     def get_serializer_class(self):
-        if self.request.method in ['PUT', 'PATCH']:
+        if self.action in ['update', 'partial_update']:
             return FolderUpdateSerializer
         return FolderSerializer
 
