@@ -1,23 +1,50 @@
+from typing import Dict
+
+from django.contrib.auth.models import Group, User
 from django.db import transaction
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
+from guardian.utils import get_identity
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from dkc.core.models import Folder, Terms, TermsAgreement, Tree
+from dkc.core.permissions import (
+    HasAccess,
+    IsAdmin,
+    IsReadable,
+    Permission,
+    PermissionFilterBackend,
+    PermissionGrant,
+)
 
 from .filtering import ActionSpecificFilterBackend, IntegerOrNullFilter
 from .utils import FullCleanModelSerializer
 
 
 class FolderSerializer(FullCleanModelSerializer):
+    public: bool = serializers.BooleanField(read_only=True)
+    access: Dict[str, bool] = serializers.SerializerMethodField()
+
     class Meta:
         model = Folder
-        fields = ['id', 'name', 'description', 'parent', 'created', 'modified', 'size']
+        fields = [
+            'id',
+            'name',
+            'description',
+            'parent',
+            'created',
+            'modified',
+            'size',
+            'public',
+            'access',
+        ]
+
+    def get_access(self, folder: Folder) -> Dict[str, bool]:
+        return folder.tree.get_access(self.context.get('user'))
 
 
 class FolderUpdateSerializer(FolderSerializer):
@@ -39,21 +66,69 @@ class FoldersFilterSet(filters.FilterSet):
     parent = IntegerOrNullFilter(required=True)
 
 
+class FolderPermissionGrantSerializer(serializers.Serializer):
+    name = serializers.CharField(required=True)
+    model = serializers.ChoiceField(['user', 'group'], required=True)
+    permission = serializers.ChoiceField([p.name for p in Permission], required=True)
+
+    def _load_user_or_group(self, data):
+        if isinstance(data, PermissionGrant):
+            return data.user_or_group
+
+        model = data.get('model')
+        name = data.get('name')
+        if model == 'user':
+            return User.objects.filter(username=name).first()
+        return Group.objects.filter(name=name).first()
+
+    def to_representation(self, instance):
+        user, group = get_identity(instance.user_or_group)
+        if user:
+            model = 'user'
+            name = user.username
+        else:
+            model = 'group'
+            name = group.name
+        return {
+            'name': name,
+            'model': model,
+            'permission': instance.permission.name,
+        }
+
+    def to_internal_value(self, data):
+        return PermissionGrant(
+            user_or_group=self._load_user_or_group(data),
+            permission=Permission[data['permission']],
+        )
+
+    def validate(self, data):
+        user_or_group = self._load_user_or_group(data)
+        if user_or_group is None:
+            raise serializers.ValidationError('Invalid user or group name')
+        return data
+
+
+class FolderPublicSerializer(serializers.Serializer):
+    public = serializers.BooleanField()
+
+
 class FolderViewSet(ModelViewSet):
     queryset = Folder.objects.all()
 
-    permission_classes = [
-        AllowAny,
-        # IsAuthenticatedOrReadOnly,
-    ]
+    permission_classes = [HasAccess]
 
-    filter_backends = [ActionSpecificFilterBackend]
+    filter_backends = [PermissionFilterBackend, ActionSpecificFilterBackend]
     filterset_class = FoldersFilterSet
 
     def get_serializer_class(self):
         if self.action in ['update', 'partial_update']:
             return FolderUpdateSerializer
         return FolderSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['user'] = self.request.user
+        return context
 
     # Atomically roll back the tree creation if folder creation fails
     @transaction.atomic
@@ -100,10 +175,7 @@ class FolderViewSet(ModelViewSet):
         },
     )
     @action(
-        methods=['GET'],
-        detail=True,
-        url_path='terms/agreement',
-        permission_classes=[IsAuthenticated],
+        methods=['GET'], detail=True, url_path='terms/agreement', permission_classes=[IsReadable]
     )
     def terms_agreement(self, request, pk=None):
         folder = self.get_object()
@@ -114,12 +186,13 @@ class FolderViewSet(ModelViewSet):
 
         user = request.user
 
-        try:
-            TermsAgreement.objects.get(terms=terms, user=user, checksum=terms.checksum)
-        except TermsAgreement.DoesNotExist:
-            pass
-        else:
-            return Response(status=204)  # User has already agreed
+        if not request.user.is_anonymous:
+            try:
+                TermsAgreement.objects.get(terms=terms, user=user, checksum=terms.checksum)
+            except TermsAgreement.DoesNotExist:
+                pass
+            else:
+                return Response(status=204)  # User has already agreed
 
         serializer = TermsSerializer(terms)
         return Response(serializer.data)
@@ -148,9 +221,84 @@ class FolderViewSet(ModelViewSet):
                 {'checksum': 'Mismatched checksum. Your terms may be out of date.'}
             )
 
-        user = request.user
-
         TermsAgreement.objects.update_or_create(
-            terms=terms, user=user, defaults={'checksum': checksum}
+            terms=terms, user=request.user, defaults={'checksum': checksum}
         )
         return Response(status=204)
+
+    @swagger_auto_schema(
+        operation_description='Get all user or group permissions set on a folder',
+        responses={200: FolderPermissionGrantSerializer(many=True)},
+    )
+    @action(detail=True, methods=['get'], permission_classes=[IsAdmin])
+    def permissions(self, request, pk=None):
+        tree: Tree = self.get_object().tree
+        grants = tree.list_granted_permissions()
+        serializer = FolderPermissionGrantSerializer(grants, many=True)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_description=(
+            'Set user or group permissions on a folder, '
+            'removing any permissions not explicitly passed.'
+        ),
+        responses={200: FolderPermissionGrantSerializer(many=True)},
+        request_body=FolderPermissionGrantSerializer(many=True),
+    )
+    @permissions.mapping.put
+    def set_permission(self, request, pk=None):
+        tree: Tree = self.get_object().tree
+        serializer = FolderPermissionGrantSerializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+        grants = serializer.validated_data
+        tree.set_permission_list(grants)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_description='Set user or group permissions on a folder',
+        responses={200: FolderPermissionGrantSerializer(many=True)},
+        request_body=FolderPermissionGrantSerializer(many=True),
+    )
+    @permissions.mapping.patch
+    def patch_permission(self, request, pk=None):
+        tree: Tree = self.get_object().tree
+        serializer = FolderPermissionGrantSerializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+        grants = serializer.validated_data
+        tree.grant_permission_list(grants)
+
+        grants = tree.list_granted_permissions()
+        serializer = FolderPermissionGrantSerializer(grants, many=True)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_description='Remove user or group permissions on a folder',
+        responses={200: FolderPermissionGrantSerializer(many=True)},
+        request_body=FolderPermissionGrantSerializer(many=True),
+    )
+    @permissions.mapping.delete
+    def delete_permission(self, request, pk=None):
+        tree: Tree = self.get_object().tree
+        serializer = FolderPermissionGrantSerializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+        grants = serializer.validated_data
+        tree.remove_permission_list(grants)
+
+        grants = tree.list_granted_permissions()
+        serializer = FolderPermissionGrantSerializer(grants, many=True)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(
+        operation_description='Set the public access flag',
+        responses={200: FolderPublicSerializer},
+        request_body=FolderPublicSerializer,
+    )
+    @action(detail=True, methods=['put'], permission_classes=[IsAdmin])
+    def public(self, request, pk=None):
+        tree: Tree = self.get_object().tree
+        serializer = FolderPublicSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        tree.public = serializer.validated_data['public']
+        tree.save()
+        return Response(serializer.data, status=200)

@@ -45,6 +45,10 @@ class DkcMixin(ConfigMixin):
         configuration.INSTALLED_APPS += [
             'dkc.core.apps.CoreConfig',
             's3_file_field',
+            'guardian',
+        ]
+        configuration.AUTHENTICATION_BACKENDS += [
+            'guardian.backends.ObjectPermissionBackend',
         ]
 
 

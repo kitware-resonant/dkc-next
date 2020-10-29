@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Type
 
+from django.contrib.auth.models import User
 from django.core import validators
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -10,6 +11,7 @@ from django_extensions.db.models import TimeStampedModel
 
 from dkc.core.models.metadata import UserMetadataField
 
+from ..permissions import Permission
 from .tree import Tree
 
 MAX_DEPTH = 30
@@ -92,6 +94,10 @@ class Folder(TimeStampedModel, models.Model):
             [self.pk, MAX_DEPTH + 1],
         )
 
+    @property
+    def public(self) -> bool:
+        return self.tree.public
+
     def increment_size(self, amount: int) -> None:
         """
         Increment or decrement the Folder size.
@@ -115,6 +121,23 @@ class Folder(TimeStampedModel, models.Model):
                 {'name': f'There is already a file here with the name "{self.name}".'}
             )
         super().clean()
+
+    @classmethod
+    def filter_by_permission(
+        cls, user: User, permission: Permission, queryset: models.QuerySet['Folder']
+    ) -> models.QuerySet['Folder']:
+        """Filter a queryset according to a user's access.
+
+        This method uses the tree's filter_by_permission method to create a queryset containing
+        *all* trees with the appropriate permission level.  This queryset is used as a subquery
+        to filter the provided queryset.
+        """
+        tree_query = Tree.filter_by_permission(user, permission, Tree.objects).values('pk')
+        return queryset.filter(tree__in=models.Subquery(tree_query))
+
+    def has_permission(self, user: User, permission: Permission) -> bool:
+        """Return whether the given user has a specific permission for the folder."""
+        return self.tree.has_permission(user, permission)
 
 
 @receiver(models.signals.post_init, sender=Folder)

@@ -15,9 +15,12 @@ class UserFactory(factory.django.DjangoModelFactory):
     email = factory.Faker('safe_email')
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
+    is_superuser = False
 
 
 class TreeFactory(factory.django.DjangoModelFactory):
+    public = False
+
     class Meta:
         model = Tree
 
