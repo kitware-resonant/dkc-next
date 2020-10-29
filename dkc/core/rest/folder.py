@@ -36,10 +36,10 @@ class FolderSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'description',
+            'size',
             'parent',
             'created',
             'modified',
-            'size',
             'public',
             'access',
         ]

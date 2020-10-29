@@ -33,16 +33,14 @@ class File(TimeStampedModel, models.Model):
             )
         ],
     )
-
     description = models.TextField(max_length=3000, blank=True)
+    size = models.PositiveBigIntegerField(editable=False)
     content_type = models.CharField(max_length=255, default='application/octet-stream')
     blob = S3FileField()
-    size = models.PositiveBigIntegerField(editable=False)
     sha512 = models.CharField(max_length=128, blank=True, default='', db_index=True, editable=False)
     user_metadata = JSONObjectField()
-
-    creator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, editable=False)
     folder = models.ForeignKey(Folder, on_delete=models.CASCADE, related_name='files')
+    creator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, editable=False)
 
     @property
     def short_checksum(self) -> Optional[str]:

@@ -17,15 +17,14 @@ class FileSerializer(FullCleanModelSerializer):
         fields = [
             'id',
             'name',
-            'blob',
-            'folder',
             'description',
+            'size',
             'content_type',
+            'blob',
+            'sha512',
+            'folder',
             'created',
             'modified',
-            'creator',
-            'sha512',
-            'size',
         ]
 
 
