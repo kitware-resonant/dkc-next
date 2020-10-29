@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 import factory.django
 
-from dkc.core.models import File, Folder
+from dkc.core.models import File, Folder, Tree
 
 _metadata_faker = factory.Faker('pydict', nb_elements=5, value_types=[str, int, float, bool])
 
@@ -16,6 +16,11 @@ class UserFactory(factory.django.DjangoModelFactory):
     last_name = factory.Faker('last_name')
 
 
+class TreeFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = Tree
+
+
 class FolderFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Folder
@@ -23,6 +28,9 @@ class FolderFactory(factory.django.DjangoModelFactory):
     name = factory.Faker('word')
     description = factory.Faker('paragraph')
     parent = None
+    tree = factory.Maybe(
+        'parent', factory.SelfAttribute('parent.tree'), factory.SubFactory(TreeFactory)
+    )
     user_metadata = _metadata_faker
 
 

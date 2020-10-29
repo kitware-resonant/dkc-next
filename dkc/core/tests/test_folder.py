@@ -84,6 +84,7 @@ def test_folder_sibling_names_unique_files(file, folder_factory):
 @pytest.mark.django_db
 def test_root_folder_names_unique(folder, folder_factory):
     other_root = folder_factory.build(name=folder.name)
+    other_root.tree.save()
     with pytest.raises(IntegrityError):
         other_root.save()
 

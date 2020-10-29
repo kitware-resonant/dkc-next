@@ -112,6 +112,7 @@ class Migration(migrations.Migration):
                 (
                     'tree',
                     models.ForeignKey(
+                        editable=False,
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name='all_folders',
                         to='core.tree',
@@ -215,6 +216,14 @@ class Migration(migrations.Migration):
             model_name='folder',
             constraint=models.CheckConstraint(
                 check=models.Q(depth__lte=30), name='folder_max_depth'
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name='folder',
+            constraint=models.UniqueConstraint(
+                condition=models.Q(parent=None),
+                fields=('tree',),
+                name='unique_root_folder_per_tree',
             ),
         ),
         migrations.AddIndex(

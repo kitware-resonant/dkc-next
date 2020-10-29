@@ -4,7 +4,7 @@ from typing import Type
 
 from django.core import validators
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
 
@@ -13,6 +13,7 @@ from dkc.core.models.metadata import UserMetadataField
 from .tree import Tree
 
 MAX_DEPTH = 30
+
 
 class Folder(TimeStampedModel, models.Model):
     class Meta:
@@ -24,6 +25,9 @@ class Folder(TimeStampedModel, models.Model):
                 fields=['name'], condition=models.Q(parent=None), name='root_folder_name_unique'
             ),
             models.CheckConstraint(check=models.Q(depth__lte=MAX_DEPTH), name='folder_max_depth'),
+            models.UniqueConstraint(
+                fields=['tree'], condition=models.Q(parent=None), name='unique_root_folder_per_tree'
+            ),
         ]
 
     name = models.CharField(
@@ -57,10 +61,16 @@ class Folder(TimeStampedModel, models.Model):
         'self', on_delete=models.CASCADE, blank=True, null=True, related_name='child_folders'
     )
 
-    tree = models.ForeignKey(Tree, on_delete=models.CASCADE, related_name='all_folders')
+    tree = models.ForeignKey(
+        Tree, editable=False, on_delete=models.CASCADE, related_name='all_folders'
+    )
 
     @property
     def is_root(self) -> bool:
+        # Optimization when model is saved
+        if self.pk:
+            # Use "parent_id" instead of "parent", to avoid doing an automatic lookup
+            return self.parent_id is None
         return self.parent is None
 
     @property
@@ -106,18 +116,19 @@ class Folder(TimeStampedModel, models.Model):
             )
         super().clean()
 
+    @classmethod
+    @transaction.atomic
+    def create_and_attach_to_tree(cls, parent: Folder = None, **kwargs) -> Folder:
+        tree = parent.tree if parent else Tree.objects.create()
+        return Folder.objects.create(tree=tree, parent=parent, **kwargs)
+
 
 @receiver(models.signals.post_init, sender=Folder)
 def _folder_post_init(sender: Type[Folder], instance: Folder, **kwargs):
-    if instance.depth is None:
-        instance.depth = 0 if instance.is_root else instance.parent.depth + 1
-
-
-@receiver(models.signals.pre_save, sender=Folder)
-def _folder_pre_save(sender: Type[Folder], instance: Folder, **kwargs):
-    # First created
+    # Only run on new object creation, as this also fires when existing models are loaded
     if instance.pk is None:
-        instance.tree = Tree.objects.create() if instance.is_root else instance.parent.tree
+        if instance.depth is None:
+            instance.depth = 0 if instance.is_root else instance.parent.depth + 1
 
 
 @receiver(models.signals.post_delete, sender=Folder)
