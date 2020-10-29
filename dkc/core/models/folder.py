@@ -4,7 +4,7 @@ from typing import Type
 
 from django.core import validators
 from django.core.exceptions import ValidationError
-from django.db import models, transaction
+from django.db import models
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
 
@@ -115,12 +115,6 @@ class Folder(TimeStampedModel, models.Model):
                 {'name': f'There is already a file here with the name "{self.name}".'}
             )
         super().clean()
-
-    @classmethod
-    @transaction.atomic
-    def create_and_attach_to_tree(cls, parent: Folder = None, **kwargs) -> Folder:
-        tree = parent.tree if parent else Tree.objects.create()
-        return Folder.objects.create(tree=tree, parent=parent, **kwargs)
 
 
 @receiver(models.signals.post_init, sender=Folder)
