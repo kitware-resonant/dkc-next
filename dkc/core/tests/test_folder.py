@@ -65,19 +65,6 @@ def test_folder_max_depth_constraint(folder_factory):
 
 
 @pytest.mark.django_db
-def test_folder_root_self_reference(folder):
-    assert folder.root_folder == folder
-
-
-@pytest.mark.django_db
-def test_root_folder_inherited(folder, folder_factory):
-    child = folder_factory(parent=folder)
-    grandchild = folder_factory(parent=child)
-    assert child.root_folder == folder
-    assert grandchild.root_folder == folder
-
-
-@pytest.mark.django_db
 def test_folder_sibling_names_unique(folder, folder_factory):
     child = folder_factory(parent=folder)
     with pytest.raises(IntegrityError):
@@ -97,6 +84,7 @@ def test_folder_sibling_names_unique_files(file, folder_factory):
 @pytest.mark.django_db
 def test_root_folder_names_unique(folder, folder_factory):
     other_root = folder_factory.build(name=folder.name)
+    other_root.tree.save()
     with pytest.raises(IntegrityError):
         other_root.save()
 
