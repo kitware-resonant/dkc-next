@@ -1,6 +1,6 @@
 import pytest
 
-from dkc.core.models import Folder
+from dkc.core.models import File, Folder, Tree
 
 
 @pytest.mark.django_db
@@ -47,11 +47,24 @@ def test_folder_rest_retrieve(api_client, folder):
     assert resp.data['name'] == folder.name
 
 
-@pytest.mark.skip
 @pytest.mark.django_db
 def test_folder_rest_update(api_client, folder):
-    resp = api_client.put(f'/api/v2/folders/{folder.id}')
+    resp = api_client.put(
+        f'/api/v2/folders/{folder.id}', data={'name': 'New name', 'description': 'New description'}
+    )
     assert resp.status_code == 200
+    folder.refresh_from_db()
+    assert folder.name == 'New name'
+    assert folder.description == 'New description'
+
+
+@pytest.mark.django_db
+def test_folder_rest_update_parent_disallowed(api_client, folder, folder_factory):
+    other_root = folder_factory()
+    child = folder_factory(parent=folder)
+    api_client.patch(f'/api/v2/folders/{child.id}', data={'parent': other_root.id})
+    child.refresh_from_db()
+    assert child.parent_id == folder.id
 
 
 @pytest.mark.django_db
@@ -60,6 +73,22 @@ def test_folder_rest_destroy(api_client, folder):
     assert resp.status_code == 204
     with pytest.raises(Folder.DoesNotExist):
         Folder.objects.get(id=folder.id)
+
+    with pytest.raises(Tree.DoesNotExist):
+        Tree.objects.get(pk=folder.tree_id)
+
+
+@pytest.mark.django_db
+def test_folder_rest_destroy_recursive(api_client, folder, folder_factory, file_factory):
+    child = folder_factory(parent=folder)
+    file = file_factory(folder=folder)
+    resp = api_client.delete(f'/api/v2/folders/{folder.id}')
+    assert resp.status_code == 204
+    with pytest.raises(Folder.DoesNotExist):
+        Folder.objects.get(id=child.id)
+
+    with pytest.raises(File.DoesNotExist):
+        File.objects.get(id=file.id)
 
 
 @pytest.mark.django_db
