@@ -31,6 +31,10 @@ class TermsSerializer(serializers.ModelSerializer):
         fields = ['text', 'checksum']
 
 
+class PostTermsAgreementSerializer(serializers.Serializer):
+    checksum = serializers.CharField(required=True)
+
+
 class FoldersFilterSet(filters.FilterSet):
     parent = IntegerOrNullFilter(required=True)
 
@@ -95,7 +99,7 @@ class FolderViewSet(ModelViewSet):
             204: 'No action is required; there are no terms, or you have already agreed.',
         },
     )
-    @action(detail=True, url_path='terms/agreement')
+    @action(methods=['GET'], detail=True, url_path='terms/agreement')
     def terms_agreement(self, request, pk=None):
         folder = self.get_object()
         try:
@@ -110,26 +114,28 @@ class FolderViewSet(ModelViewSet):
 
         try:
             agreement = TermsAgreement.objects.get(terms=terms, user=user)
-            if agreement.checksum == terms.checksum:
-                return Response(status=204)  # User has already agreed
         except TermsAgreement.DoesNotExist:
             pass
+        else:
+            if agreement.checksum == terms.checksum:
+                return Response(status=204)  # User has already agreed
+
         serializer = TermsSerializer(terms)
         return Response(serializer.data)
 
     @swagger_auto_schema(
         operation_description='Agree to the terms of use for a folder.',
+        request_body=PostTermsAgreementSerializer,
         responses={
             204: 'Your agreement was recorded.',
         },
     )
-    @action(
-        methods=['POST'],
-        serializer_class=None,
-        detail=True,
-        url_path=r'terms/agreement/(?P<checksum>\w+)',
-    )
-    def agree_terms(self, request, checksum=None, pk=None):
+    @terms_agreement.mapping.post
+    def agree_terms(self, request, pk=None):
+        serializer = PostTermsAgreementSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        checksum = serializer.validated_data['checksum']
+
         folder = self.get_object()
         try:
             terms = folder.tree.terms

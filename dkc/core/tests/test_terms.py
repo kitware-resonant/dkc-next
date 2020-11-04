@@ -31,7 +31,8 @@ def test_terms_agreement_unauthenticated(api_client, terms):
 def test_terms_post_agreement(api_client, terms, user):
     api_client.force_authenticate(user=user)
     resp = api_client.post(
-        f'/api/v2/folders/{terms.tree.root_folder.id}/terms/agreement/{terms.checksum}'
+        f'/api/v2/folders/{terms.tree.root_folder.id}/terms/agreement',
+        data={'checksum': terms.checksum},
     )
     assert resp.status_code == 204
 
@@ -51,7 +52,9 @@ def test_terms_skip_existing_agreement(api_client, terms_agreement):
 @pytest.mark.django_db
 def test_terms_agree_invalid_checksum(api_client, terms, user):
     api_client.force_authenticate(user=user)
-    resp = api_client.post(f'/api/v2/folders/{terms.tree.root_folder.id}/terms/agreement/invalid')
+    resp = api_client.post(
+        f'/api/v2/folders/{terms.tree.root_folder.id}/terms/agreement', data={'checksum': 'invalid'}
+    )
     assert resp.status_code == 400
     assert resp.json()['checksum'] == 'Mismatched checksum. Your terms may be out of date.'
 
@@ -59,7 +62,7 @@ def test_terms_agree_invalid_checksum(api_client, terms, user):
 @pytest.mark.django_db
 def test_terms_agree_invalid_folder(api_client, folder, user):
     api_client.force_authenticate(user=user)
-    resp = api_client.post(f'/api/v2/folders/{folder.id}/terms/agreement/a_checksum')
+    resp = api_client.post(f'/api/v2/folders/{folder.id}/terms/agreement', data={'checksum': 'x'})
     assert resp.status_code == 400
     assert resp.json()['folder'] == 'This folder has no associated terms of use.'
 
