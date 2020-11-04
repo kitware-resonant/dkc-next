@@ -113,7 +113,7 @@ class FolderViewSet(ModelViewSet):
             if agreement.checksum == terms.checksum:
                 return Response(status=204)  # User has already agreed
         except TermsAgreement.DoesNotExist:
-            ...
+            pass
         serializer = TermsSerializer(terms)
         return Response(serializer.data)
 

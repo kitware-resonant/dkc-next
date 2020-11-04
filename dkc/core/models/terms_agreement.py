@@ -1,12 +1,12 @@
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
-from django_extensions.db.fields import ModificationDateTimeField
+from django_extensions.db.models import TimeStampedModel
 
 from .terms import Terms
 
 
-class TermsAgreement(models.Model):
+class TermsAgreement(TimeStampedModel, models.Model):
     class Meta:
         indexes = [models.Index(fields=['terms', 'user'])]
         constraints = [
@@ -15,10 +15,9 @@ class TermsAgreement(models.Model):
             ),
         ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='+')
-    terms = models.ForeignKey(Terms, on_delete=models.CASCADE, related_name='+')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='terms_agreements')
+    terms = models.ForeignKey(Terms, on_delete=models.CASCADE, related_name='agreements')
     checksum = models.CharField(max_length=32)
-    when = ModificationDateTimeField()
 
     def clean(self) -> None:
         if self.checksum != self.terms.checksum:

@@ -13,4 +13,4 @@ class TermsAdmin(admin.ModelAdmin):
     def text_preview(self, terms: Terms, limit=100):
         if len(terms.text) > limit:
             return f'{terms.text[:limit]}...'
-        return terms.text[:limit]
+        return terms.text
