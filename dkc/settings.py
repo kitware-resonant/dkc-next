@@ -18,13 +18,14 @@ class DkcConfig(ConfigMixin):
 
     BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
-    REST_FRAMEWORK = {
-        'DEFAULT_PAGINATION_CLASS': 'dkc.core.rest.pagination.BoundedLimitOffsetPagination',
-    }
-
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
         configuration.INSTALLED_APPS += ['dkc.core.apps.CoreConfig']
+        configuration.REST_FRAMEWORK.update(
+            {
+                'DEFAULT_PAGINATION_CLASS': 'dkc.core.rest.pagination.BoundedLimitOffsetPagination',
+            }
+        )
 
 
 class DevelopmentConfiguration(DkcConfig, DevelopmentBaseConfiguration):
