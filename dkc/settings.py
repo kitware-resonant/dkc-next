@@ -18,6 +18,12 @@ class DkcConfig(ConfigMixin):
 
     BASE_DIR = Path(__file__).resolve(strict=True).parent.parent
 
+    # Enable usernames distinct from email addresses
+    ACCOUNT_ADAPTER = 'allauth.account.adapter.DefaultAccountAdapter'
+    ACCOUNT_USERNAME_REQUIRED = True
+    ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
+    ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
         configuration.INSTALLED_APPS += ['dkc.core.apps.CoreConfig']
