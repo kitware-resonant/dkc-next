@@ -13,18 +13,13 @@ from composed_configuration import (
 )
 from django.core.validators import MaxLengthValidator, RegexValidator
 
-
-class UsernameRegexValidator(RegexValidator):
-    regex = r'^[a-z\d](?:[a-z\d]|-(?=[a-z\d]))*$'
-    message = (
-        'Username may only contain alphanumeric characters and hyphens. It cannot begin or '
-        'end with a hyphen, and may not have consecutive hyphens.'
-    )
-    flags = re.IGNORECASE
-
-
 username_validators = [
-    UsernameRegexValidator(),
+    RegexValidator(
+        r'^[a-z\d](?:[a-z\d]|-(?=[a-z\d]))*$',
+        'Username may only contain alphanumeric characters and hyphens. It cannot begin or '
+        'end with a hyphen, and may not have consecutive hyphens.',
+        flags=re.IGNORECASE,
+    ),
     MaxLengthValidator(50, 'Username may not be more than 50 characters.'),
 ]
 
