@@ -12,8 +12,6 @@ Objects have a public/private setting. If an object is public, it acts as if it 
 
 Currently the following design decisions exist:
 
-* Users are not access controlled.
-* User groups are not access controlled.
 * User objects are private, but user names are public. Only that user or an admin user can see a user object.
 * TODO(correct these because this is likely wrong, as it hasn't been fully implemented) User group objects are private, but user group names are public. Only users in the group or an admin user can see the user group object.
 * There is no difference between a public object and having read access to that object.

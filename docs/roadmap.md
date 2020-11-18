@@ -32,10 +32,10 @@ This deployment setup was chosen to maximize developer and deployment velocity (
 
 ### Decided upon, and being implemented
 
-1. [Folders, Files, Quotas, and Metadata](FILES-FOLDERS-ROADMAP.md)
-2. [Authentication](AUTHENTICATION-ROADMAP.md)
-3. [Authorization, Permissions, User Groups](AUTHORIZATION-ROADMAP.md)
-4. [User Agreement](AGREEMENT-ROADMAP.md) 
+1. [Folders, Files, Quotas, and Metadata](roadmap-files-folders.md)
+2. [Authentication](roadmap-authentication.md)
+3. [Authorization, Permissions, User Groups](roadmap-authorization.md)
+4. [Terms of Use/User Agreement](roadmap-terms-of-use.md) 
 
 ### Desired future feature additions, not yet decided upon
 
