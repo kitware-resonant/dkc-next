@@ -1,6 +1,6 @@
 # data.kitware.com Roadmap: Folders, Files, Quotas, and Metadata
 
-DKC's primary use case is mirroring a filesystem hierarchy on the web, for sharing. DKC will not be optimized for efficient access to the hierarchical representation, such as would be desired for running analysis on the stored file data.
+DKCN's primary use case is mirroring a filesystem hierarchy on the web, for sharing. DKCN will not be optimized for efficient access to the hierarchical representation, such as would be desired for running analysis on the stored file data.
 
 Important domain objects are `Folders` and `Files`, which are similar to their filesystem notions. All folders will have an ultimate anscetor called a root folder, and any user can create one or more root folders. Files live within a single folder.
 

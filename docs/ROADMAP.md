@@ -1,7 +1,8 @@
 # data.kitware.com Roadmap
 
-data.kitware.com (DKC) is a public hosted web service at domain name data.kitware.com used to share data within Kitware and between Kitware and collaborators.
+data.kitware.com (DKC) is a public hosted web service at domain name data.kitware.com used to share data within Kitware and between Kitware and collaborators. Currently data.kitware.com hosts a live Girder 3 instance used by Kitware, and the application being built in this repo (called dkc-next, or DKCN) is hosted at https://dkc-next.girderops.net/. 
 
+The current swagger API for DKCN is hosted at https://dkc-next.girderops.net/api/docs/swagger.
 
 ## Tech Stack
 
@@ -21,7 +22,7 @@ Much of the admin UI is provided by built in Django server rendered components. 
 
 ## Deployment
 
-DKC is deployed on Heroku with a MinIO instance on prem at Kitware (KHQ in Clifton Park, NY). The deployment is managed through [Terraform](https://github.com/girder/dkc-next/tree/master/terraform) and CI/CD to the extent possible.
+DKCN is deployed on Heroku with a MinIO instance on prem at Kitware (KHQ in Clifton Park, NY). The deployment is managed through [Terraform](https://github.com/girder/dkc-next/tree/master/terraform) and CI/CD to the extent possible.
 
 This deployment setup was chosen to maximize developer and deployment velocity (Heroku with its excellent tooling) while also providing a fixed cost for outgoing bandwidth (MinIO on prem, compared to e.g. S3).
 

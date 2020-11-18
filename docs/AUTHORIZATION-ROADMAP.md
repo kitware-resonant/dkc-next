@@ -1,8 +1,8 @@
 # data.kitware.com Roadmap: Authorization, Permissions, User Groups
 
-Authorization settings, also called access control, for DKC refers to both permissions and a public/private setting.
+Authorization settings, also called access control, for DKCN refers to both permissions and a public/private setting.
 
-DKC will provide a permission system, and permissions will apply at a root folder level. DKC will allow objects to have a public/private setting in addition to permissions. All folders and files descended from a root folder will have the same authorization settings as the root folder. If you want separate authorization settings, create a separate root folder.
+DKCN will provide a permission system, and permissions will apply at a root folder level. DKCN will allow objects to have a public/private setting in addition to permissions. All folders and files descended from a root folder will have the same authorization settings as the root folder. If you want separate authorization settings, create a separate root folder.
 
 Authorizations are granted on an object to individual users or user groups, and the permission levels are: `read`, `write`, and `admin`. Read permission allows a user/group to read the object (including object properties, object metadata, and binary contents), write permission allows a user/group to mutate an object's properties except for permissions, admin permissions allow a user/group to see all the permissions on an object and to mutate the permissions on the object. Admin access implies write access, write access implies read access. If you do not have admin access to the object, you can see your own permissions and whether the object is public, but not the full permission set of the object.
 
