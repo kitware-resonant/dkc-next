@@ -62,7 +62,8 @@ def test_folder_rest_update(api_client, folder):
 def test_folder_rest_update_parent_disallowed(api_client, folder, folder_factory):
     other_root = folder_factory()
     child = folder_factory(parent=folder)
-    api_client.patch(f'/api/v2/folders/{child.id}', data={'parent': other_root.id})
+    resp = api_client.patch(f'/api/v2/folders/{child.id}', data={'parent': other_root.id})
+    assert resp.status_code == 200
     child.refresh_from_db()
     assert child.parent_id == folder.id
 
