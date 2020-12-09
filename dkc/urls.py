@@ -21,6 +21,7 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('admin/', admin.site.urls),
+    path('api/v2/s3-upload/', include('s3_file_field.urls')),
     path('api/v2/', include(router.urls)),
     path('api/docs/redoc', schema_view.with_ui('redoc'), name='docs-redoc'),
     path('api/docs/swagger', schema_view.with_ui('swagger'), name='docs-swagger'),

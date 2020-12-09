@@ -39,7 +39,10 @@ class DkcConfig(ConfigMixin):
 
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
-        configuration.INSTALLED_APPS += ['dkc.core.apps.CoreConfig']
+        configuration.INSTALLED_APPS += [
+            'dkc.core.apps.CoreConfig',
+            's3_file_field',
+        ]
         configuration.REST_FRAMEWORK.update(
             {
                 'DEFAULT_PAGINATION_CLASS': 'dkc.core.rest.pagination.BoundedLimitOffsetPagination',
