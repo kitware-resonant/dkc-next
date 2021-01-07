@@ -7,11 +7,11 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
+from girder_utils.models import JSONObjectField
 from s3_file_field import S3FileField
 
 from ..permissions import Permission
 from .folder import Folder
-from .metadata import UserMetadataField
 from .tree import Tree
 
 
@@ -39,7 +39,7 @@ class File(TimeStampedModel, models.Model):
     blob = S3FileField()
     size = models.PositiveBigIntegerField(editable=False)
     sha512 = models.CharField(max_length=128, blank=True, default='', db_index=True, editable=False)
-    user_metadata = UserMetadataField()
+    user_metadata = JSONObjectField()
 
     creator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, editable=False)
     folder = models.ForeignKey(Folder, on_delete=models.CASCADE, related_name='files')

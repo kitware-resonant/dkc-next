@@ -3,8 +3,7 @@ import django.core.validators
 from django.db import migrations, models
 import django.db.models.deletion
 import django_extensions.db.fields
-
-import dkc.core.models.metadata
+import girder_utils.models
 
 
 class Migration(migrations.Migration):
@@ -97,7 +96,7 @@ class Migration(migrations.Migration):
                 ('description', models.TextField(blank=True, max_length=3000)),
                 (
                     'user_metadata',
-                    dkc.core.models.metadata.UserMetadataField(blank=True, default=dict),
+                    girder_utils.models.JSONObjectField(),
                 ),
                 (
                     'parent',
@@ -172,7 +171,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     'user_metadata',
-                    dkc.core.models.metadata.UserMetadataField(blank=True, default=dict),
+                    girder_utils.models.JSONObjectField(),
                 ),
                 (
                     'creator',
