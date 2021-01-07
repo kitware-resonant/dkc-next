@@ -24,7 +24,7 @@ username_validators = [
 ]
 
 
-class DkcConfig(ConfigMixin):
+class DkcMixin(ConfigMixin):
     WSGI_APPLICATION = 'dkc.wsgi.application'
     ROOT_URLCONF = 'dkc.urls'
 
@@ -43,24 +43,19 @@ class DkcConfig(ConfigMixin):
             'dkc.core.apps.CoreConfig',
             's3_file_field',
         ]
-        configuration.REST_FRAMEWORK.update(
-            {
-                'DEFAULT_PAGINATION_CLASS': 'dkc.core.rest.pagination.BoundedLimitOffsetPagination',
-            }
-        )
 
 
-class DevelopmentConfiguration(DkcConfig, DevelopmentBaseConfiguration):
+class DevelopmentConfiguration(DkcMixin, DevelopmentBaseConfiguration):
     pass
 
 
-class TestingConfiguration(DkcConfig, TestingBaseConfiguration):
+class TestingConfiguration(DkcMixin, TestingBaseConfiguration):
     pass
 
 
-class ProductionConfiguration(DkcConfig, ProductionBaseConfiguration):
+class ProductionConfiguration(DkcMixin, ProductionBaseConfiguration):
     pass
 
 
-class HerokuProductionConfiguration(DkcConfig, HerokuProductionBaseConfiguration):
+class HerokuProductionConfiguration(DkcMixin, HerokuProductionBaseConfiguration):
     pass

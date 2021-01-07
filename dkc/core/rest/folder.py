@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import transaction
 from django_filters import rest_framework as filters
-from drf_yasg2.utils import swagger_auto_schema
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
