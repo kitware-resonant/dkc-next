@@ -42,7 +42,7 @@ setup(
         'django-allauth',
         'django-click',
         'django-composed-configuration[dev,prod]>=0.10.0',
-        'django-configurations',
+        'django-configurations[database,email]',
         'django-extensions',
         'django-filter',
         'django-girder-utils',
