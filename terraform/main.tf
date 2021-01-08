@@ -9,7 +9,7 @@ terraform {
   }
 }
 provider "aws" {
-  region = "us-east-1"
+  region              = "us-east-1"
   allowed_account_ids = ["417138409483"]
   # Must set AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY envvars
 }
@@ -27,24 +27,66 @@ data "heroku_team" "heroku" {
   name = "kitware"
 }
 
-module "django" {
-  source  = "girder/django/heroku"
-  version = "0.5.0"
+locals {
+  api_fqdn = "dkc-next.girderops.net"
+  web_fqdn = "dkc-next-web.girderops.net"
 
-  project_slug     = "dkc-next"
-  route53_zone_id  = data.aws_route53_zone.domain.zone_id
-  heroku_team_name = data.heroku_team.heroku.name
-  subdomain_name   = "dkc-next"
+  django_cors_origin_whitelist       = ["https://${local.web_fqdn}"]
+  django_cors_origin_regex_whitelist = []
+}
 
-  additional_django_vars = {
-    DJANGO_SENTRY_DSN = "https://a9897ae4723d4b0ab90c2856a342ba5a@o267860.ingest.sentry.io/5458971"
+module "smtp" {
+  source  = "girder/girder/aws//modules/smtp"
+  version = "0.7.0"
+
+  fqdn            = local.web_fqdn
+  project_slug    = "dkc-next"
+  route53_zone_id = data.aws_route53_zone.domain.zone_id
+}
+
+resource "random_string" "django_secret" {
+  length  = 64
+  special = false
+}
+
+module "api" {
+  source  = "girder/django/heroku//modules/heroku"
+  version = "0.7.0"
+
+  team_name = data.heroku_team.heroku.name
+  app_name  = "dkc-next"
+  fqdn      = local.api_fqdn
+
+  config_vars = {
+    DJANGO_CONFIGURATION               = "HerokuProductionConfiguration"
+    DJANGO_ALLOWED_HOSTS               = local.api_fqdn
+    DJANGO_CORS_ORIGIN_WHITELIST       = join(",", local.django_cors_origin_whitelist)
+    DJANGO_CORS_ORIGIN_REGEX_WHITELIST = join(",", local.django_cors_origin_regex_whitelist)
+    DJANGO_DEFAULT_FROM_EMAIL          = "admin@${local.web_fqdn}"
+    DJANGO_SENTRY_DSN                  = "https://a9897ae4723d4b0ab90c2856a342ba5a@o267860.ingest.sentry.io/5458971"
+    DJANGO_MINIO_STORAGE_ENDPOINT      = "storage.kitware.com:443"
+    MINIO_STORAGE_USE_HTTPS            = "true"
+    DJANGO_MINIO_STORAGE_ACCESS_KEY    = var.storage_access_key
+    DJANGO_MINIO_STORAGE_SECRET_KEY    = var.storage_secret_key
+    DJANGO_STORAGE_BUCKET_NAME         = "dkc"
   }
-  django_cors_origin_whitelist = ["https://${aws_route53_record.web.fqdn}"]
+  sensitive_config_vars = {
+    DJANGO_EMAIL_URL  = "submission://${urlencode(module.smtp.username)}:${urlencode(module.smtp.password)}@${module.smtp.host}:${module.smtp.port}"
+    DJANGO_SECRET_KEY = random_string.django_secret.result
+  }
+}
+
+resource "aws_route53_record" "api" {
+  zone_id = data.aws_route53_zone.domain.zone_id
+  name    = local.api_fqdn
+  type    = "CNAME"
+  ttl     = "300"
+  records = [module.api.cname]
 }
 
 resource "aws_route53_record" "web" {
   zone_id = data.aws_route53_zone.domain.zone_id
-  name    = "dkc-next-web"
+  name    = local.web_fqdn
   type    = "CNAME"
   ttl     = "300"
   records = ["dkc-next.netlify.app"]
