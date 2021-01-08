@@ -7,10 +7,13 @@ from composed_configuration import (
     ComposedConfiguration,
     ConfigMixin,
     DevelopmentBaseConfiguration,
-    HerokuProductionBaseConfiguration,
-    ProductionBaseConfiguration,
+    HttpsMixin,
+    MinioStorageMixin,
+    SentryMixin,
+    SmtpEmailMixin,
     TestingBaseConfiguration,
 )
+from composed_configuration._configuration import _BaseConfiguration, _HerokuMixin
 from django.core.validators import MaxLengthValidator, RegexValidator
 
 username_validators = [
@@ -53,9 +56,16 @@ class TestingConfiguration(DkcMixin, TestingBaseConfiguration):
     pass
 
 
-class ProductionConfiguration(DkcMixin, ProductionBaseConfiguration):
-    pass
+# Don't define a generic ProductionConfiguration, since this only targets Heroku deployment
 
-
-class HerokuProductionConfiguration(DkcMixin, HerokuProductionBaseConfiguration):
+# Similar to composed_configuration.HerokuProductionConfiguration, with MinioStorageMixin instead
+class HerokuProductionConfiguration(
+    DkcMixin,
+    _HerokuMixin,
+    SentryMixin,
+    SmtpEmailMixin,
+    MinioStorageMixin,
+    HttpsMixin,
+    _BaseConfiguration,
+):
     pass
