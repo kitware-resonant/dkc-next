@@ -65,7 +65,7 @@ module "api" {
     DJANGO_DEFAULT_FROM_EMAIL          = "admin@${local.web_fqdn}"
     DJANGO_SENTRY_DSN                  = "https://a9897ae4723d4b0ab90c2856a342ba5a@o267860.ingest.sentry.io/5458971"
     DJANGO_MINIO_STORAGE_ENDPOINT      = "storage.kitware.com:443"
-    MINIO_STORAGE_USE_HTTPS            = "true"
+    DJANGO_MINIO_STORAGE_USE_HTTPS     = "true"
     DJANGO_MINIO_STORAGE_ACCESS_KEY    = var.storage_access_key
     DJANGO_MINIO_STORAGE_SECRET_KEY    = var.storage_secret_key
     DJANGO_STORAGE_BUCKET_NAME         = "dkc"
