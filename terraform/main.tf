@@ -17,19 +17,18 @@ provider "heroku" {
   # Must set HEROKU_EMAIL, HEROKU_API_KEY envvars
 }
 
-data "aws_route53_zone" "domain" {
-  # This must be created by hand in the AWS console
-  name = "girderops.net"
-}
-
 data "heroku_team" "heroku" {
   # This must be created by hand in the Heroku console
   name = "kitware"
 }
 
+resource "aws_route53_zone" "domain" {
+  name = "dkc.kitware.com"
+}
+
 locals {
-  api_fqdn = "dkc-next.girderops.net"
-  web_fqdn = "dkc-next-web.girderops.net"
+  api_fqdn = "api.dkc.kitware.com"
+  web_fqdn = "dkc.kitware.com"
 
   django_cors_origin_whitelist       = ["https://${local.web_fqdn}"]
   django_cors_origin_regex_whitelist = []
@@ -41,7 +40,7 @@ module "smtp" {
 
   fqdn            = local.web_fqdn
   project_slug    = "dkc-next"
-  route53_zone_id = data.aws_route53_zone.domain.zone_id
+  route53_zone_id = aws_route53_zone.domain.zone_id
 }
 
 resource "random_string" "django_secret" {
@@ -77,7 +76,7 @@ module "api" {
 }
 
 resource "aws_route53_record" "api" {
-  zone_id = data.aws_route53_zone.domain.zone_id
+  zone_id = aws_route53_zone.domain.zone_id
   name    = local.api_fqdn
   type    = "CNAME"
   ttl     = "300"
@@ -85,9 +84,10 @@ resource "aws_route53_record" "api" {
 }
 
 resource "aws_route53_record" "web" {
-  zone_id = data.aws_route53_zone.domain.zone_id
+  zone_id = aws_route53_zone.domain.zone_id
   name    = local.web_fqdn
-  type    = "CNAME"
+  type    = "A"
   ttl     = "300"
-  records = ["dkc-next.netlify.app"]
+  # https://docs.netlify.com/domains-https/custom-domains/configure-external-dns/#configure-an-apex-domain
+  records = ["104.198.14.52"]
 }
