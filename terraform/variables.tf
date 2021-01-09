@@ -3,5 +3,6 @@ variable "storage_access_key" {
 }
 
 variable "storage_secret_key" {
-  type = string
+  type      = string
+  sensitive = true
 }
