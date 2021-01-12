@@ -12,9 +12,10 @@ from rest_framework.viewsets import ModelViewSet
 from dkc.core.models import Folder, Terms, TermsAgreement, Tree
 
 from .filtering import ActionSpecificFilterBackend, IntegerOrNullFilter
+from .utils import FullCleanModelSerializer
 
 
-class FolderSerializer(serializers.ModelSerializer):
+class FolderSerializer(FullCleanModelSerializer):
     class Meta:
         model = Folder
         fields = ['id', 'name', 'description', 'parent', 'created', 'modified', 'size']
