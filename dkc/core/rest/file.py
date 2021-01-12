@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
@@ -26,6 +27,13 @@ class FileSerializer(serializers.ModelSerializer):
             'sha512',
             'size',
         ]
+
+    def validate(self, data):
+        try:
+            self.Meta.model(**data).full_clean()
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(serializers.as_serializer_error(exc))
+        return data
 
 
 class FileViewSet(ModelViewSet):
