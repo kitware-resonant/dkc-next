@@ -1,6 +1,5 @@
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny
 from rest_framework.viewsets import ModelViewSet
@@ -8,9 +7,10 @@ from rest_framework.viewsets import ModelViewSet
 from dkc.core.models import File
 
 from .filtering import ActionSpecificFilterBackend
+from .utils import FullCleanModelSerializer
 
 
-class FileSerializer(serializers.ModelSerializer):
+class FileSerializer(FullCleanModelSerializer):
     class Meta:
         model = File
         fields = [
