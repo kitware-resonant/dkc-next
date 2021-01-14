@@ -46,8 +46,8 @@ setup(
         'django-extensions',
         'django-filter',
         'django-girder-utils',
-        'django-oauth-toolkit',
-        'django-s3-file-field',
+        'django-oauth-toolkit==1.3.2',
+        'django-s3-file-field[minio,boto3]',
         'djangorestframework',
         'drf-yasg',
         # Production-only
