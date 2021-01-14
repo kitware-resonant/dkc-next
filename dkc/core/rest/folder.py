@@ -1,11 +1,10 @@
-from django.contrib.auth.models import User
 from django.db import transaction
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
@@ -99,7 +98,12 @@ class FolderViewSet(ModelViewSet):
             204: 'No action is required; there are no terms, or you have already agreed.',
         },
     )
-    @action(methods=['GET'], detail=True, url_path='terms/agreement')
+    @action(
+        methods=['GET'],
+        detail=True,
+        url_path='terms/agreement',
+        permission_classes=[IsAuthenticated],
+    )
     def terms_agreement(self, request, pk=None):
         folder = self.get_object()
         try:
@@ -107,18 +111,14 @@ class FolderViewSet(ModelViewSet):
         except Terms.DoesNotExist:
             return Response(status=204)  # No terms for the folder
 
-        # TODO get the actual user once REST authentication is in place
-        user = User.objects.first()
-
-        # TODO if no user is authenticated, just send out the terms.
+        user = request.user
 
         try:
-            agreement = TermsAgreement.objects.get(terms=terms, user=user)
+            TermsAgreement.objects.get(terms=terms, user=user, checksum=terms.checksum)
         except TermsAgreement.DoesNotExist:
             pass
         else:
-            if agreement.checksum == terms.checksum:
-                return Response(status=204)  # User has already agreed
+            return Response(status=204)  # User has already agreed
 
         serializer = TermsSerializer(terms)
         return Response(serializer.data)
@@ -147,8 +147,7 @@ class FolderViewSet(ModelViewSet):
                 {'checksum': 'Mismatched checksum. Your terms may be out of date.'}
             )
 
-        # TODO get the actual user once REST authentication is in place
-        user = User.objects.first()
+        user = request.user
 
         TermsAgreement.objects.update_or_create(
             terms=terms, user=user, defaults={'checksum': checksum}
