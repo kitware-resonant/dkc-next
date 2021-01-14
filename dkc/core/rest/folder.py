@@ -107,8 +107,7 @@ class FolderViewSet(ModelViewSet):
         except Terms.DoesNotExist:
             return Response(status=204)  # No terms for the folder
 
-        # TODO get the actual user once REST authentication is in place
-        user = User.objects.first()
+        user = request.user
 
         # TODO if no user is authenticated, just send out the terms.
 
@@ -147,8 +146,7 @@ class FolderViewSet(ModelViewSet):
                 {'checksum': 'Mismatched checksum. Your terms may be out of date.'}
             )
 
-        # TODO get the actual user once REST authentication is in place
-        user = User.objects.first()
+        user = request.user
 
         TermsAgreement.objects.update_or_create(
             terms=terms, user=user, defaults={'checksum': checksum}
