@@ -2,6 +2,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.viewsets import ModelViewSet
 
 from dkc.core.models import File, Folder
@@ -32,7 +33,7 @@ class FileSerializer(FullCleanModelSerializer):
 class FileViewSet(ModelViewSet):
     queryset = File.objects.all()
 
-    permission_classes = [HasAccess]
+    permission_classes = [HasAccess & IsAuthenticatedOrReadOnly]
     serializer_class = FileSerializer
 
     filter_backends = [PermissionFilterBackend, ActionSpecificFilterBackend]

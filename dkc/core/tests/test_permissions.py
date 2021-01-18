@@ -293,6 +293,19 @@ def test_anonymous_user_cannot_create_root_folder(api_client):
 
 
 @pytest.mark.django_db
+def test_anonymous_user_cannot_create_files(api_client, folder, s3ff_field_value):
+    resp = api_client.post(
+        '/api/v2/files',
+        data={
+            'name': 'test.txt',
+            'folder': folder.id,
+            'blob': s3ff_field_value,
+        },
+    )
+    assert resp.status_code == 401
+
+
+@pytest.mark.django_db
 def test_folder_create_permission_enforcement(api_client, folder, user):
     api_client.force_authenticate(user=user)
     resp = api_client.post('/api/v2/folders', data={'name': 'test', 'parent': folder.id})
