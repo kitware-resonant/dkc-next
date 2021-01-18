@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, List, Union
 from django.contrib.auth.models import Group, User
 from django.db import models
 from rest_framework.filters import BaseFilterBackend
-from rest_framework.permissions import SAFE_METHODS, BasePermission
+from rest_framework.permissions import SAFE_METHODS, BasePermission, IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.views import View
 
@@ -73,6 +73,9 @@ class IsReadOnlyEndpoint(BasePermission):
     def has_object_permission(self, request: Request, view: View, obj) -> bool:
         return request.method in SAFE_METHODS
 
+    def has_permission(self, request: Request, view: View) -> bool:
+        return request.method in SAFE_METHODS
+
 
 class IsReadable(BasePermission):
     def has_object_permission(self, request: Request, view: View, obj: Model) -> bool:
@@ -89,7 +92,7 @@ class IsAdmin(BasePermission):
         return obj.has_permission(request.user, Permission.admin)
 
 
-HasAccess = (IsReadOnlyEndpoint & IsReadable) | IsWriteable  # type: ignore
+HasAccess = (IsReadOnlyEndpoint & IsReadable) | (IsAuthenticated & IsWriteable)  # type: ignore
 
 
 # A filter backend that integrates with the access control API implemented in the models.  It
