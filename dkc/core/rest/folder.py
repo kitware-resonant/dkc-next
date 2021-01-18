@@ -116,7 +116,7 @@ class FolderPublicSerializer(serializers.Serializer):
 class FolderViewSet(ModelViewSet):
     queryset = Folder.objects.all()
 
-    permission_classes = [HasAccess, IsAuthenticatedOrReadOnly]
+    permission_classes = [HasAccess & IsAuthenticatedOrReadOnly]
 
     filter_backends = [PermissionFilterBackend, ActionSpecificFilterBackend]
     filterset_class = FoldersFilterSet
