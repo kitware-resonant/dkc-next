@@ -8,6 +8,7 @@ from guardian.utils import get_identity
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
@@ -115,7 +116,7 @@ class FolderPublicSerializer(serializers.Serializer):
 class FolderViewSet(ModelViewSet):
     queryset = Folder.objects.all()
 
-    permission_classes = [HasAccess]
+    permission_classes = [HasAccess, IsAuthenticatedOrReadOnly]
 
     filter_backends = [PermissionFilterBackend, ActionSpecificFilterBackend]
     filterset_class = FoldersFilterSet
