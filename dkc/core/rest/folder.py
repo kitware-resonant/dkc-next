@@ -1,6 +1,7 @@
 from typing import Dict
 
 from django.contrib.auth.models import Group, User
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django_filters import rest_framework as filters
 from drf_yasg.utils import swagger_auto_schema
@@ -137,6 +138,8 @@ class FolderViewSet(ModelViewSet):
         parent: Folder = serializer.validated_data.get('parent')
         if parent:
             tree = parent.tree
+            if not tree.has_permission(serializer.context['user'], permission=Permission.write):
+                raise PermissionDenied()
         else:
             tree = Tree.objects.create()
             tree.grant_permission(
