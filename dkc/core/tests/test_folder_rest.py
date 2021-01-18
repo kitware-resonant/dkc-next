@@ -4,9 +4,9 @@ from dkc.core.models import File, Folder, Tree
 
 
 @pytest.mark.django_db
-def test_folder_rest_list_children(api_client, folder, folder_factory):
+def test_folder_rest_list_children(admin_api_client, folder, folder_factory):
     child = folder_factory(parent=folder)
-    resp = api_client.get(f'/api/v2/folders?parent={folder.id}')
+    resp = admin_api_client.get(f'/api/v2/folders?parent={folder.id}')
 
     assert resp.status_code == 200
     assert resp.data['count'] == 1
@@ -16,31 +16,33 @@ def test_folder_rest_list_children(api_client, folder, folder_factory):
 
 
 @pytest.mark.django_db
-def test_folder_rest_path(api_client, folder, folder_factory):
+def test_folder_rest_path(admin_api_client, folder, folder_factory):
     child = folder_factory(parent=folder)
     grandchild = folder_factory(parent=child)
-    resp = api_client.get(f'/api/v2/folders/{grandchild.id}/path')
+    resp = admin_api_client.get(f'/api/v2/folders/{grandchild.id}/path')
     assert resp.status_code == 200
     assert [f['name'] for f in resp.data] == [folder.name, child.name, grandchild.name]
 
 
 @pytest.mark.django_db
-def test_folder_rest_create_root(api_client):
-    resp = api_client.post('/api/v2/folders', data={'name': 'test folder'})
+def test_folder_rest_create_root(admin_api_client):
+    resp = admin_api_client.post('/api/v2/folders', data={'name': 'test folder'})
     assert resp.status_code == 201
     assert Folder.objects.count() == 1
 
 
 @pytest.mark.django_db
-def test_folder_rest_create_child(api_client, folder):
-    resp = api_client.post('/api/v2/folders', data={'name': 'test folder', 'parent': folder.pk})
+def test_folder_rest_create_child(admin_api_client, folder):
+    resp = admin_api_client.post(
+        '/api/v2/folders', data={'name': 'test folder', 'parent': folder.pk}
+    )
     assert resp.status_code == 201
     assert Folder.objects.count() == 2
 
 
 @pytest.mark.django_db
-def test_folder_rest_retrieve(api_client, folder):
-    resp = api_client.get(f'/api/v2/folders/{folder.id}')
+def test_folder_rest_retrieve(admin_api_client, folder):
+    resp = admin_api_client.get(f'/api/v2/folders/{folder.id}')
 
     assert resp.status_code == 200
     # Inspect .data to avoid parsing the response content
@@ -48,8 +50,8 @@ def test_folder_rest_retrieve(api_client, folder):
 
 
 @pytest.mark.django_db
-def test_folder_rest_update(api_client, folder):
-    resp = api_client.put(
+def test_folder_rest_update(admin_api_client, folder):
+    resp = admin_api_client.put(
         f'/api/v2/folders/{folder.id}', data={'name': 'New name', 'description': 'New description'}
     )
     assert resp.status_code == 200
@@ -59,18 +61,18 @@ def test_folder_rest_update(api_client, folder):
 
 
 @pytest.mark.django_db
-def test_folder_rest_update_parent_disallowed(api_client, folder, folder_factory):
+def test_folder_rest_update_parent_disallowed(admin_api_client, folder, folder_factory):
     other_root = folder_factory()
     child = folder_factory(parent=folder)
-    resp = api_client.patch(f'/api/v2/folders/{child.id}', data={'parent': other_root.id})
+    resp = admin_api_client.patch(f'/api/v2/folders/{child.id}', data={'parent': other_root.id})
     assert resp.status_code == 200
     child.refresh_from_db()
     assert child.parent_id == folder.id
 
 
 @pytest.mark.django_db
-def test_folder_rest_destroy(api_client, folder):
-    resp = api_client.delete(f'/api/v2/folders/{folder.id}')
+def test_folder_rest_destroy(admin_api_client, folder):
+    resp = admin_api_client.delete(f'/api/v2/folders/{folder.id}')
     assert resp.status_code == 204
     with pytest.raises(Folder.DoesNotExist):
         Folder.objects.get(id=folder.id)
@@ -80,10 +82,10 @@ def test_folder_rest_destroy(api_client, folder):
 
 
 @pytest.mark.django_db
-def test_folder_rest_destroy_recursive(api_client, folder, folder_factory, file_factory):
+def test_folder_rest_destroy_recursive(admin_api_client, folder, folder_factory, file_factory):
     child = folder_factory(parent=folder)
     file = file_factory(folder=folder)
-    resp = api_client.delete(f'/api/v2/folders/{folder.id}')
+    resp = admin_api_client.delete(f'/api/v2/folders/{folder.id}')
     assert resp.status_code == 204
     with pytest.raises(Folder.DoesNotExist):
         Folder.objects.get(id=child.id)
@@ -93,32 +95,32 @@ def test_folder_rest_destroy_recursive(api_client, folder, folder_factory, file_
 
 
 @pytest.mark.django_db
-def test_folder_list_roots_parent_required(api_client):
-    resp = api_client.get('/api/v2/folders')
+def test_folder_list_roots_parent_required(admin_api_client):
+    resp = admin_api_client.get('/api/v2/folders')
     assert resp.status_code == 400
     assert resp.data == {'parent': ['This field is required.']}
 
 
 @pytest.mark.django_db
-def test_folder_list_roots_invalid_parent(api_client):
-    resp = api_client.get('/api/v2/folders', data={'parent': 'x'})
+def test_folder_list_roots_invalid_parent(admin_api_client):
+    resp = admin_api_client.get('/api/v2/folders', data={'parent': 'x'})
     assert resp.status_code == 400
     assert resp.data == {'parent': ['May only be an integer or "null".']}
 
 
 @pytest.mark.django_db
-def test_folder_list_roots(api_client, folder, folder_factory):
+def test_folder_list_roots(admin_api_client, folder, folder_factory):
     folder_factory(parent=folder)  # Make child folder to test that we only get roots
-    resp = api_client.get('/api/v2/folders', data={'parent': 'null'})
+    resp = admin_api_client.get('/api/v2/folders', data={'parent': 'null'})
     assert resp.status_code == 200
     assert resp.data['count'] == 1
     assert resp.data['results'][0]['name'] == folder.name
 
 
 @pytest.mark.django_db
-def test_folder_default_ordering(api_client, folder_factory):
+def test_folder_default_ordering(admin_api_client, folder_factory):
     for name in ('B', 'C', 'A'):
         folder_factory(name=name)
-    resp = api_client.get('/api/v2/folders', data={'parent': 'null'})
+    resp = admin_api_client.get('/api/v2/folders', data={'parent': 'null'})
     assert resp.status_code == 200
     assert [f['name'] for f in resp.data['results']] == ['A', 'B', 'C']

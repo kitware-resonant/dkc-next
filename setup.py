@@ -45,6 +45,7 @@ setup(
         'django-configurations[database,email]',
         'django-extensions',
         'django-filter',
+        'django-guardian',
         'django-girder-utils',
         'django-oauth-toolkit==1.3.2',
         'django-s3-file-field[minio]',

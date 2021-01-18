@@ -11,7 +11,8 @@ def api_client() -> APIClient:
 
 
 @pytest.fixture
-def authenticated_api_client(user) -> APIClient:
+def admin_api_client(user_factory) -> APIClient:
+    user = user_factory(is_superuser=True)
     client = APIClient()
     client.force_authenticate(user=user)
     return client
@@ -20,6 +21,11 @@ def authenticated_api_client(user) -> APIClient:
 @pytest.fixture
 def child_folder(folder, folder_factory):
     return folder_factory(parent=folder)
+
+
+@pytest.fixture
+def public_folder(folder_factory):
+    return folder_factory(tree__public=True)
 
 
 register(factories.FileFactory)

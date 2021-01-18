@@ -9,8 +9,10 @@ from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
 from s3_file_field import S3FileField
 
+from ..permissions import Permission
 from .folder import Folder
 from .metadata import UserMetadataField
+from .tree import Tree
 
 
 class File(TimeStampedModel, models.Model):
@@ -59,6 +61,23 @@ class File(TimeStampedModel, models.Model):
                 {'name': f'There is already a folder here with the name "{self.name}".'}
             )
         super().clean()
+
+    @classmethod
+    def filter_by_permission(
+        cls, user: User, permission: Permission, queryset: models.QuerySet['File']
+    ) -> models.QuerySet['File']:
+        """Filter a queryset according to a user's access.
+
+        This method uses the tree's filter_by_permission method to create a queryset containing
+        *all* trees with the appropriate permission level.  This queryset is used as a subquery
+        to filter the provided queryset by traversing through the folder->tree relationship.
+        """
+        tree_query = Tree.filter_by_permission(user, permission, Tree.objects).values('pk')
+        return queryset.filter(folder__tree__in=models.Subquery(tree_query))
+
+    def has_permission(self, user: User, permission: Permission) -> bool:
+        """Return whether the given user has a specific permission for the file."""
+        return self.folder.tree.has_permission(user, permission)
 
 
 @receiver(models.signals.pre_save, sender=File)
