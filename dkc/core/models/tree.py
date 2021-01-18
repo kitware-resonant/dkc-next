@@ -89,7 +89,7 @@ class Tree(models.Model):
     def grant_permission(self, grant: PermissionGrant) -> None:
         """Activate a specific permission grant.
 
-        This method with apply a user or group permission to the current entity.  This
+        Applies a user or group permission to the current entity.  This
         is a wrapper around the django-guardian shortcut "assign_perm", but also contains
         logic to remove other permissions that had previously existed on the entity.
         """
@@ -140,8 +140,8 @@ class Tree(models.Model):
     def get_access(self, user: Optional[User]) -> Dict[str, bool]:
         """Return the permissions that the given user has on this entity."""
         if user is None:
-            # This is a special case for the anonymous user.  Acess can only
-            # be read and only for public trees.
+            # This is a special case for the anonymous user.  Access can only
+            # be 'read', and only for public trees.
             access = {p.name: False for p in Permission}
             access['read'] = self.public
             return access

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 class Permission(Enum):
     """
-    A list tree access permissions.
+    A list of tree access permissions.
 
     The enum represents the list of permission types that are managed by the permission
     related methods attached to the models in this app.  These permissions differ from
