@@ -134,7 +134,15 @@ class FolderViewSet(ModelViewSet):
     @transaction.atomic
     def perform_create(self, serializer: serializers.ModelSerializer):
         parent: Folder = serializer.validated_data.get('parent')
-        tree = parent.tree if parent else Tree.objects.create()
+        if parent:
+            tree = parent.tree
+        else:
+            tree = Tree.objects.create()
+            tree.grant_permission(
+                PermissionGrant(
+                    user_or_group=serializer.context['user'], permission=Permission.admin
+                )
+            )
         serializer.save(tree=tree)
 
     @swagger_auto_schema(
