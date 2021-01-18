@@ -19,6 +19,7 @@ class UserViewSet(GenericViewSet):
     queryset = User.objects.all()
 
     permission_classes = [AllowAny]
+    serializer_class = UserSerializer
 
     @action(detail=False, pagination_class=None)
     def me(self, request):
