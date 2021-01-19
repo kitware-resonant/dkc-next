@@ -1,3 +1,4 @@
+from django.core import signing
 import pytest
 from pytest_factoryboy import register
 from rest_framework.test import APIClient
@@ -26,6 +27,21 @@ def child_folder(folder, folder_factory):
 @pytest.fixture
 def public_folder(folder_factory):
     return folder_factory(tree__public=True)
+
+
+@pytest.fixture
+def s3ff_field_value() -> str:
+    """Generate a faked S3FileField field_value to pass via REST.
+
+    Because S3FF currently doesn't check that the object was created, this just
+    provides a fake signed value rather than mocking the entire S3FF upload process.
+    """
+    return signing.dumps(
+        {
+            'object_key': 'key',
+            'file_size': 123,
+        }
+    )
 
 
 register(factories.FileFactory)
