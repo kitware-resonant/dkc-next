@@ -324,3 +324,13 @@ def test_file_create_permission_enforcement(api_client, folder, user, s3ff_field
         },
     )
     assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_set_admin_permission(user_factory, folder):
+    admin = user_factory(is_superuser=True)
+    grant = PermissionGrant(user_or_group=admin, permission=Permission.read)
+    tree = folder.tree
+
+    tree.grant_permission(grant)
+    assert grant in tree.list_granted_permissions()

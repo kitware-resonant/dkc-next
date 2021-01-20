@@ -79,9 +79,6 @@ class Tree(models.Model):
 
     def _get_user_permissions(self, user: User) -> Set[Permission]:
         permission_strings = {p.value for p in Permission}
-        if user.is_superuser:
-            return set(Permission)
-
         user_perms = get_user_perms(user, self)
         return {Permission(p) for p in user_perms if p in permission_strings}
 
