@@ -39,7 +39,7 @@ module "smtp" {
   source  = "girder/girder/aws//modules/smtp"
   version = "0.7.0"
 
-  fqdn            = local.web_fqdn
+  fqdn            = local.api_fqdn
   project_slug    = "dkc-next"
   route53_zone_id = data.aws_route53_zone.domain.zone_id
 }
@@ -62,7 +62,7 @@ module "api" {
     DJANGO_ALLOWED_HOSTS               = local.api_fqdn
     DJANGO_CORS_ORIGIN_WHITELIST       = join(",", local.django_cors_origin_whitelist)
     DJANGO_CORS_ORIGIN_REGEX_WHITELIST = join(",", local.django_cors_origin_regex_whitelist)
-    DJANGO_DEFAULT_FROM_EMAIL          = "admin@${local.web_fqdn}"
+    DJANGO_DEFAULT_FROM_EMAIL          = "admin@${local.api_fqdn}"
     DJANGO_SENTRY_DSN                  = "https://a9897ae4723d4b0ab90c2856a342ba5a@o267860.ingest.sentry.io/5458971"
     DJANGO_MINIO_STORAGE_ENDPOINT      = "storage.kitware.com:443"
     DJANGO_MINIO_STORAGE_USE_HTTPS     = "true"
