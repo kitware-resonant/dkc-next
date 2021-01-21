@@ -8,8 +8,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
-
-from dkc.core.models.metadata import UserMetadataField
+from girder_utils.models import JSONObjectField
 
 from ..permissions import Permission
 from .tree import Tree
@@ -54,7 +53,7 @@ class Folder(TimeStampedModel, models.Model):
 
     # TODO: What max_length?
     description = models.TextField(max_length=3000, blank=True)
-    user_metadata = UserMetadataField()
+    user_metadata = JSONObjectField()
 
     # # TODO: owner on_delete policy?
     # owner = models.ForeignKey(User, on_delete=models.CASCADE)
