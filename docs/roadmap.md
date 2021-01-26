@@ -45,3 +45,5 @@ This deployment setup was chosen to maximize developer and deployment velocity (
 4. Construction of large zip files for downloading hierarchies
 5. Authorized upload by anonymous users
 6. Share a private file via a link
+7. Create tools to track usage of data storage, i.e., who has all the data, who is causing big recent increases in storage
+8. Deprovision a user workflow
