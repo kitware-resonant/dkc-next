@@ -95,7 +95,7 @@ def test_folder_rest_retrieve(admin_api_client, folder):
 
 @pytest.mark.django_db
 def test_folder_rest_update(admin_api_client, folder):
-    resp = admin_api_client.put(
+    resp = admin_api_client.patch(
         f'/api/v2/folders/{folder.id}', data={'name': 'New name', 'description': 'New description'}
     )
     assert resp.status_code == 200
