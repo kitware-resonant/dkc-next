@@ -25,6 +25,50 @@ def test_folder_rest_path(admin_api_client, folder, folder_factory):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    'name', ['', 'ten_chars_' * 30, 'foo/bar'], ids=['empty', 'too_long', 'forward_slash']
+)
+def test_folder_rest_create_invalid_name(admin_api_client, name):
+    resp = admin_api_client.post('/api/v2/folders', data={'name': name})
+    assert resp.status_code == 400
+    assert 'name' in resp.data
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('description', ['ten_chars_' * 301], ids=['too_long'])
+def test_folder_rest_create_invalid_description(admin_api_client, description):
+    resp = admin_api_client.post(
+        '/api/v2/folders', data={'name': 'test folder', 'description': description}
+    )
+    assert resp.status_code == 400
+    assert 'description' in resp.data
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize('parent', ['foo', -1, 9000], ids=['non_int', 'negative', 'nonexistent'])
+def test_folder_rest_create_invalid_parent(admin_api_client, parent):
+    resp = admin_api_client.post('/api/v2/folders', data={'name': 'test folder', 'parent': parent})
+    assert resp.status_code == 400
+    assert 'parent' in resp.data
+
+
+@pytest.mark.django_db
+def test_folder_rest_create_invalid_duplicate_root(admin_api_client, folder):
+    resp = admin_api_client.post('/api/v2/folders', data={'name': folder.name})
+    assert resp.status_code == 400
+    assert 'non_field_errors' in resp.data
+
+
+@pytest.mark.django_db
+def test_folder_rest_create_invalid_duplicate_sibling(admin_api_client, child_folder):
+    resp = admin_api_client.post(
+        '/api/v2/folders', data={'name': child_folder.name, 'parent': child_folder.parent.id}
+    )
+    assert resp.status_code == 400
+    assert 'non_field_errors' in resp.data
+
+
+@pytest.mark.django_db
 def test_folder_rest_create_root(admin_api_client):
     resp = admin_api_client.post('/api/v2/folders', data={'name': 'test folder'})
     assert resp.status_code == 201
