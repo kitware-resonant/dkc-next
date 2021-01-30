@@ -54,7 +54,7 @@ def test_folder_rest_create_invalid_parent(admin_api_client, parent):
 
 @pytest.mark.django_db
 def test_folder_rest_create_invalid_duplicate_root(admin_api_client, folder):
-    resp = admin_api_client.post('/api/v2/folders', data={'name': folder.name})
+    resp = admin_api_client.post('/api/v2/folders', data={'name': folder.name, 'parent': None})
     assert resp.status_code == 400
     assert 'non_field_errors' in resp.data
 
@@ -70,7 +70,7 @@ def test_folder_rest_create_invalid_duplicate_sibling(admin_api_client, child_fo
 
 @pytest.mark.django_db
 def test_folder_rest_create_root(admin_api_client):
-    resp = admin_api_client.post('/api/v2/folders', data={'name': 'test folder'})
+    resp = admin_api_client.post('/api/v2/folders', data={'name': 'test folder', 'parent': None})
     assert resp.status_code == 201
     assert Folder.objects.count() == 1
 
