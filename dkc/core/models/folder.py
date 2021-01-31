@@ -116,9 +116,7 @@ class Folder(TimeStampedModel, models.Model):
 
     def clean(self) -> None:
         if self.parent and self.parent.files.filter(name=self.name).exists():
-            raise ValidationError(
-                {'name': f'There is already a file here with the name "{self.name}".'}
-            )
+            raise ValidationError({'name': 'A file with that name already exists here.'})
         super().clean()
 
     @classmethod
