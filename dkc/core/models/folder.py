@@ -88,6 +88,16 @@ class Folder(TimeStampedModel, models.Model):
         )
 
     @property
+    def abs_path(self) -> str:
+        """
+        Get a string representation of this Folder's absolute path.
+
+        This ends in a trailing slash, indicating that the value is a Folder.
+        """
+        full_path = '/'.join(folder.name for folder in reversed(self.ancestors))
+        return f'/{full_path}/'
+
+    @property
     def public(self) -> bool:
         return self.tree.public
 

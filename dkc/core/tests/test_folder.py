@@ -33,6 +33,13 @@ def test_ancestors(folder, folder_factory):
 
 
 @pytest.mark.django_db
+def test_folder_abs_path(folder, folder_factory):
+    child = folder_factory(parent=folder)
+    grandchild = folder_factory(parent=child)
+    assert grandchild.abs_path == f'/{folder.name}/{child.name}/{grandchild.name}/'
+
+
+@pytest.mark.django_db
 def test_root_folder_depth_is_zero(folder):
     assert folder.depth == 0
 
