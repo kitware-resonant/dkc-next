@@ -44,12 +44,12 @@ class FileSerializer(serializers.ModelSerializer):
     def _validate_unique_folder_siblings(self, attrs):
         if self.instance is None:
             # Create
-            # By this point, other validators will have run, ensuring that 'name' and 'parent' exist
+            # By this point, other validators will have run, ensuring that 'name' and 'folder' exist
             name = attrs['name']
             folder_id = attrs['folder']
         else:
             # Update
-            # On a partial update, 'name' and 'parent' might be absent, so use the existing instance
+            # On a partial update, 'name' and 'folder' might be absent, so use the existing instance
             name = attrs['name'] if 'name' in attrs else self.instance.name
             folder_id = attrs['folder'] if 'folder' in attrs else self.instance.folder_id
         if Folder.objects.filter(name=name, parent_id=folder_id).exists():
