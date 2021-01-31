@@ -79,6 +79,20 @@ def test_folder_rest_create_invalid_duplicate_sibling_file(admin_api_client, fol
 
 
 @pytest.mark.django_db
+def test_folder_rest_create_invalid_duplicate_sibling_file_update(
+    admin_api_client, folder, file_factory, folder_factory
+):
+    # Since this is implemented with an explicitly separate code path, it deserves its own test
+    child_file = file_factory(folder=folder)
+    child_folder = folder_factory(parent=folder)
+    resp = admin_api_client.patch(
+        f'/api/v2/folders/{child_folder.id}', data={'name': child_file.name}
+    )
+    assert resp.status_code == 400
+    assert 'name' in resp.data
+
+
+@pytest.mark.django_db
 def test_folder_rest_create_root(admin_api_client):
     resp = admin_api_client.post('/api/v2/folders', data={'name': 'test folder', 'parent': None})
     assert resp.status_code == 201

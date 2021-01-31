@@ -78,7 +78,7 @@ class FolderSerializer(serializers.ModelSerializer):
             # Update
             # On a partial update, 'name' and 'parent' might be absent, so use the existing instance
             name = attrs['name'] if 'name' in attrs else self.instance.name
-            parent_id = attrs['parent_id'] if 'parent_id' in attrs else self.instance.parent_id
+            parent_id = attrs['parent'] if 'parent' in attrs else self.instance.parent_id
         if parent_id is not None and File.objects.filter(name=name, folder_id=parent_id).exists():
             raise serializers.ValidationError(
                 {'name': 'A file with that name already exists here.'}, code='unique'
