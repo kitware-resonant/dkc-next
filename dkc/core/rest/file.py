@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -32,14 +33,23 @@ class FileSerializer(FullCleanModelSerializer):
         ]
 
 
+class FileUpdateSerializer(FileSerializer):
+    class Meta(FileSerializer.Meta):
+        read_only_fields = FileSerializer.Meta.read_only_fields + ['folder']
+
+
 class FileViewSet(ModelViewSet):
     queryset = File.objects.all()
 
     permission_classes = [HasAccess]
-    serializer_class = FileSerializer
 
     filter_backends = [PermissionFilterBackend, ActionSpecificFilterBackend]
     filterset_fields = ['folder', 'sha512']
+
+    def get_serializer_class(self):
+        if self.action in ['update', 'partial_update']:
+            return FileUpdateSerializer
+        return FileSerializer
 
     def perform_create(self, serializer: FileSerializer):
         folder: Folder = serializer.validated_data['folder']
