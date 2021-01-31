@@ -278,7 +278,7 @@ def test_delete_permissions(api_client, user, user_factory, admin_folder):
 @pytest.mark.django_db
 def test_root_folder_create_sets_permissions(api_client, user):
     api_client.force_authenticate(user=user)
-    resp = api_client.post('/api/v2/folders', data={'name': 'test'})
+    resp = api_client.post('/api/v2/folders', data={'name': 'test', 'parent': None})
     assert resp.status_code == 201
     assert resp.data['public'] is False
     assert resp.data['access'] == {'read': True, 'write': True, 'admin': True}

@@ -12,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from dkc.core.models import Folder, Terms, TermsAgreement, Tree
+from dkc.core.models import File, Folder, Terms, TermsAgreement, Tree
 from dkc.core.permissions import (
     HasAccess,
     IsAdmin,
@@ -23,10 +23,10 @@ from dkc.core.permissions import (
 )
 
 from .filtering import ActionSpecificFilterBackend, IntegerOrNullFilter
-from .utils import FullCleanModelSerializer
+from .utils import FormattableDict
 
 
-class FolderSerializer(FullCleanModelSerializer):
+class FolderSerializer(serializers.ModelSerializer):
     public: bool = serializers.BooleanField(read_only=True)
     access: Dict[str, bool] = serializers.SerializerMethodField()
 
@@ -43,14 +43,51 @@ class FolderSerializer(FullCleanModelSerializer):
             'public',
             'access',
         ]
+        # ModelSerializer cannot auto-generate validators for model-level constraints
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=Folder.objects.all(),
+                fields=['parent', 'name'],
+                message=FormattableDict({'name': 'A folder with that name already exists here.'}),
+            ),
+            # This could also be implemented as a UniqueValidator on 'name',
+            # but its easier to not explicitly redefine the whole serializer field
+            serializers.UniqueTogetherValidator(
+                queryset=Folder.objects.filter(parent=None),
+                fields=['name'],
+                message=FormattableDict({'name': 'A root folder with that name already exists.'}),
+            ),
+            # folder_max_depth and unique_root_folder_per_tree are internal sanity constraints,
+            # and do not need to be enforced as validators
+        ]
 
     def get_access(self, folder: Folder) -> Dict[str, bool]:
         return folder.tree.get_access(self.context.get('user'))
 
+    def validate(self, attrs):
+        self._validate_unique_file_siblings(attrs)
+        return attrs
+
+    def _validate_unique_file_siblings(self, attrs):
+        if self.instance is None:
+            # Create
+            # By this point, other validators will have run, ensuring that 'name' and 'parent' exist
+            name = attrs['name']
+            parent_id = attrs['parent']
+        else:
+            # Update
+            # On a partial update, 'name' and 'parent' might be absent, so use the existing instance
+            name = attrs['name'] if 'name' in attrs else self.instance.name
+            parent_id = attrs['parent'] if 'parent' in attrs else self.instance.parent_id
+        if parent_id is not None and File.objects.filter(name=name, folder_id=parent_id).exists():
+            raise serializers.ValidationError(
+                {'name': 'A file with that name already exists here.'}, code='unique'
+            )
+
 
 class FolderUpdateSerializer(FolderSerializer):
     class Meta(FolderSerializer.Meta):
-        fields = ['id', 'name', 'description']
+        read_only_fields = ['parent']
 
 
 class TermsSerializer(serializers.ModelSerializer):
@@ -134,18 +171,15 @@ class FolderViewSet(ModelViewSet):
     # Atomically roll back the tree creation if folder creation fails
     @transaction.atomic
     def perform_create(self, serializer: serializers.ModelSerializer):
-        parent: Folder = serializer.validated_data.get('parent')
+        parent: Folder = serializer.validated_data['parent']
+        user: User = self.request.user
         if parent:
             tree = parent.tree
-            if not tree.has_permission(serializer.context['user'], permission=Permission.write):
+            if not tree.has_permission(user, permission=Permission.write):
                 raise PermissionDenied()
         else:
             tree = Tree.objects.create()
-            tree.grant_permission(
-                PermissionGrant(
-                    user_or_group=serializer.context['user'], permission=Permission.admin
-                )
-            )
+            tree.grant_permission(PermissionGrant(user_or_group=user, permission=Permission.admin))
         serializer.save(tree=tree)
 
     @swagger_auto_schema(
