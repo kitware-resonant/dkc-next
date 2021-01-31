@@ -12,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from dkc.core.models import Folder, Terms, TermsAgreement, Tree
+from dkc.core.models import File, Folder, Terms, TermsAgreement, Tree
 from dkc.core.permissions import (
     HasAccess,
     IsAdmin,
@@ -62,6 +62,26 @@ class FolderSerializer(serializers.ModelSerializer):
 
     def get_access(self, folder: Folder) -> Dict[str, bool]:
         return folder.tree.get_access(self.context.get('user'))
+
+    def validate(self, attrs):
+        self._validate_unique_file_siblings(attrs)
+        return attrs
+
+    def _validate_unique_file_siblings(self, attrs):
+        if self.instance is None:
+            # Create
+            # By this point, other validators will have run, ensuring that 'name' and 'parent' exist
+            name = attrs['name']
+            parent_id = attrs['parent']
+        else:
+            # Update
+            # On a partial update, 'name' and 'parent' might be absent, so use the existing instance
+            name = attrs['name'] if 'name' in attrs else self.instance.name
+            parent_id = attrs['parent_id'] if 'parent_id' in attrs else self.instance.parent_id
+        if parent_id is not None and File.objects.filter(name=name, folder_id=parent_id).exists():
+            raise serializers.ValidationError(
+                'A file with that name already exists here.', code='unique'
+            )
 
 
 class FolderUpdateSerializer(FolderSerializer):
