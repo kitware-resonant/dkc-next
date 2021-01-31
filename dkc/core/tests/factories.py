@@ -31,11 +31,12 @@ class FolderFactory(factory.django.DjangoModelFactory):
 
     name = factory.Faker('word')
     description = factory.Faker('paragraph')
+    user_metadata = _metadata_faker
     parent = None
     tree = factory.Maybe(
         'parent', factory.SelfAttribute('parent.tree'), factory.SubFactory(TreeFactory)
     )
-    user_metadata = _metadata_faker
+    creator = factory.SubFactory(UserFactory)
 
 
 class FileFactory(factory.django.DjangoModelFactory):
@@ -45,9 +46,9 @@ class FileFactory(factory.django.DjangoModelFactory):
     name = factory.Faker('file_name')
     description = factory.Faker('paragraph')
     blob = factory.django.FileField(data=b'fakefilebytes', filename='fake.txt')
-    creator = factory.SubFactory(UserFactory)
-    folder = factory.SubFactory(FolderFactory)
     user_metadata = _metadata_faker
+    folder = factory.SubFactory(FolderFactory)
+    creator = factory.SubFactory(UserFactory)
 
 
 class TreeWithRootFactory(factory.django.DjangoModelFactory):

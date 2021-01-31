@@ -23,8 +23,12 @@ class FileSerializer(FullCleanModelSerializer):
             'blob',
             'sha512',
             'folder',
+            'creator',
             'created',
             'modified',
+        ]
+        read_only_fields = [
+            'creator',
         ]
 
 
@@ -38,10 +42,11 @@ class FileViewSet(ModelViewSet):
     filterset_fields = ['folder', 'sha512']
 
     def perform_create(self, serializer: FileSerializer):
-        folder: Folder = serializer.validated_data.get('folder')
-        if not folder.has_permission(self.request.user, permission=Permission.write):
+        folder: Folder = serializer.validated_data['folder']
+        user: User = self.request.user
+        if not folder.has_permission(user, permission=Permission.write):
             raise PermissionDenied()
-        serializer.save()
+        serializer.save(creator=user)
 
     # TODO figure out how to indicate this response type in the OpenAPI schema
     @action(detail=True)

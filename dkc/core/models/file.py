@@ -40,7 +40,8 @@ class File(TimeStampedModel, models.Model):
     sha512 = models.CharField(max_length=128, blank=True, default='', db_index=True, editable=False)
     user_metadata = JSONObjectField()
     folder = models.ForeignKey(Folder, on_delete=models.CASCADE, related_name='files')
-    creator = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, editable=False)
+    # Prevent deletion of User if it has Folders referencing it
+    creator = models.ForeignKey(User, on_delete=models.PROTECT)
 
     @property
     def short_checksum(self) -> Optional[str]:

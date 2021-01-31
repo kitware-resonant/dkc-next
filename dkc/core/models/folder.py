@@ -57,8 +57,8 @@ class Folder(TimeStampedModel, models.Model):
         ],
         editable=False,
     )
-    # TODO: owner on_delete policy?
-    # owner = models.ForeignKey(User, on_delete=models.CASCADE)
+    # Prevent deletion of User if it has Folders referencing it
+    creator = models.ForeignKey(User, on_delete=models.PROTECT)
 
     @property
     def is_root(self) -> bool:
