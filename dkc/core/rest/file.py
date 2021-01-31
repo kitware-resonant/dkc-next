@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet
 
@@ -9,10 +10,10 @@ from dkc.core.models import File, Folder
 from dkc.core.permissions import HasAccess, Permission, PermissionFilterBackend
 
 from .filtering import ActionSpecificFilterBackend
-from .utils import FullCleanModelSerializer
+from .utils import FormattableDict
 
 
-class FileSerializer(FullCleanModelSerializer):
+class FileSerializer(serializers.ModelSerializer):
     class Meta:
         model = File
         fields = [
@@ -31,6 +32,34 @@ class FileSerializer(FullCleanModelSerializer):
         read_only_fields = [
             'creator',
         ]
+        # ModelSerializer cannot auto-generate validators for model-level constraints
+        validators = [
+            serializers.UniqueTogetherValidator(
+                queryset=File.objects.all(),
+                fields=['folder', 'name'],
+                message=FormattableDict({'name': 'A file with that name already exists here.'}),
+            ),
+        ]
+
+    def validate(self, attrs):
+        self._validate_unique_folder_siblings(attrs)
+        return attrs
+
+    def _validate_unique_folder_siblings(self, attrs):
+        if self.instance is None:
+            # Create
+            # By this point, other validators will have run, ensuring that 'name' and 'folder' exist
+            name = attrs['name']
+            folder_id = attrs['folder']
+        else:
+            # Update
+            # On a partial update, 'name' and 'folder' might be absent, so use the existing instance
+            name = attrs['name'] if 'name' in attrs else self.instance.name
+            folder_id = attrs['folder'] if 'folder' in attrs else self.instance.folder_id
+        if Folder.objects.filter(name=name, parent_id=folder_id).exists():
+            raise serializers.ValidationError(
+                {'name': 'A folder with that name already exists here.'}, code='unique'
+            )
 
 
 class FileUpdateSerializer(FileSerializer):
