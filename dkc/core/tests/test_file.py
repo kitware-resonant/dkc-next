@@ -21,9 +21,7 @@ def test_file_sibling_names_unique(file, file_factory):
 def test_file_sibling_names_unique_folders(folder, folder_factory, file_factory):
     folder_factory(parent=folder, name='unique')
     sibling_file = file_factory.build(folder=folder, name='unique')
-    with pytest.raises(
-        ValidationError, match=r'There is already a folder here with the name "unique"\.'
-    ):
+    with pytest.raises(ValidationError, match='A folder with that name already exists here.'):
         sibling_file.full_clean()
 
 
