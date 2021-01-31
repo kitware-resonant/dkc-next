@@ -56,6 +56,8 @@ def test_folder_max_depth(folder_factory):
 def test_folder_max_depth_constraint(folder_factory):
     folder = folder_factory(depth=MAX_DEPTH)
     child = folder_factory.build(parent=folder)
+    # Make sure foreign key references exist in database first
+    child.creator.save()
 
     with pytest.raises(IntegrityError, match=r'folder_max_depth'):
         # save without validation
@@ -79,6 +81,8 @@ def test_folder_sibling_names_unique_files(file, folder_factory):
 @pytest.mark.django_db
 def test_root_folder_names_unique(folder, folder_factory):
     other_root = folder_factory.build(name=folder.name)
+    # Make sure foreign key references exist in database first
+    other_root.creator.save()
     other_root.tree.save()
     with pytest.raises(IntegrityError):
         other_root.save()

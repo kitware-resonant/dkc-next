@@ -36,12 +36,16 @@ class FolderSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'description',
+            'size',
             'parent',
+            'creator',
             'created',
             'modified',
-            'size',
             'public',
             'access',
+        ]
+        read_only_fields = [
+            'creator',
         ]
         # ModelSerializer cannot auto-generate validators for model-level constraints
         validators = [
@@ -87,7 +91,7 @@ class FolderSerializer(serializers.ModelSerializer):
 
 class FolderUpdateSerializer(FolderSerializer):
     class Meta(FolderSerializer.Meta):
-        read_only_fields = ['parent']
+        read_only_fields = FolderSerializer.Meta.read_only_fields + ['parent']
 
 
 class TermsSerializer(serializers.ModelSerializer):
@@ -170,7 +174,7 @@ class FolderViewSet(ModelViewSet):
 
     # Atomically roll back the tree creation if folder creation fails
     @transaction.atomic
-    def perform_create(self, serializer: serializers.ModelSerializer):
+    def perform_create(self, serializer: FolderSerializer):
         parent: Folder = serializer.validated_data['parent']
         user: User = self.request.user
         if parent:
@@ -180,7 +184,7 @@ class FolderViewSet(ModelViewSet):
         else:
             tree = Tree.objects.create()
             tree.grant_permission(PermissionGrant(user_or_group=user, permission=Permission.admin))
-        serializer.save(tree=tree)
+        serializer.save(tree=tree, creator=user)
 
     @swagger_auto_schema(
         operation_description='Retrieve the path from the root folder to the requested folder.',

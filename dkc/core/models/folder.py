@@ -41,30 +41,24 @@ class Folder(TimeStampedModel, models.Model):
             )
         ],
     )
-
+    # TODO: What max_length?
+    description = models.TextField(max_length=3000, blank=True)
+    size = models.PositiveBigIntegerField(default=0, editable=False)
+    user_metadata = JSONObjectField()
+    tree = models.ForeignKey(
+        Tree, editable=False, on_delete=models.CASCADE, related_name='all_folders'
+    )
+    parent = models.ForeignKey(
+        'self', on_delete=models.CASCADE, blank=True, null=True, related_name='child_folders'
+    )
     depth = models.PositiveSmallIntegerField(
         validators=[
             validators.MaxValueValidator(MAX_DEPTH, message='Maximum folder depth exceeded.'),
         ],
         editable=False,
     )
-
-    size = models.PositiveBigIntegerField(default=0, editable=False)
-
-    # TODO: What max_length?
-    description = models.TextField(max_length=3000, blank=True)
-    user_metadata = JSONObjectField()
-
-    # # TODO: owner on_delete policy?
-    # owner = models.ForeignKey(User, on_delete=models.CASCADE)
-
-    parent = models.ForeignKey(
-        'self', on_delete=models.CASCADE, blank=True, null=True, related_name='child_folders'
-    )
-
-    tree = models.ForeignKey(
-        Tree, editable=False, on_delete=models.CASCADE, related_name='all_folders'
-    )
+    # Prevent deletion of User if it has Folders referencing it
+    creator = models.ForeignKey(User, on_delete=models.PROTECT)
 
     @property
     def is_root(self) -> bool:

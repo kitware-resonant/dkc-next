@@ -12,7 +12,9 @@ def test_file_checksum(file_factory):
 
 @pytest.mark.django_db
 def test_file_sibling_names_unique(file, file_factory):
-    sibling = file_factory.build(folder=file.folder, name=file.name, creator=None)
+    sibling = file_factory.build(folder=file.folder, name=file.name)
+    # Make sure foreign key references exist in database first
+    sibling.creator.save()
     with pytest.raises(IntegrityError, match=r'Key .* already exists\.'):
         sibling.save()
 
