@@ -47,14 +47,14 @@ class FolderSerializer(serializers.ModelSerializer):
             serializers.UniqueTogetherValidator(
                 queryset=Folder.objects.all(),
                 fields=['parent', 'name'],
-                message='Folder names must be unique among siblings.',
+                message='A folder with that name already exists here.',
             ),
             # This could also be implemented as a UniqueValidator on 'name',
             # but its easier to not explicitly redefine the whole serializer field
             serializers.UniqueTogetherValidator(
                 queryset=Folder.objects.filter(parent=None),
                 fields=['name'],
-                message='Root folders must have a unique name.',
+                message='A root folder with that name already exists.',
             ),
             # folder_max_depth and unique_root_folder_per_tree are internal sanity constraints,
             # and do not need to be enforced as validators
