@@ -23,6 +23,7 @@ from dkc.core.permissions import (
 )
 
 from .filtering import ActionSpecificFilterBackend, IntegerOrNullFilter
+from .utils import FormattableDict
 
 
 class FolderSerializer(serializers.ModelSerializer):
@@ -47,14 +48,14 @@ class FolderSerializer(serializers.ModelSerializer):
             serializers.UniqueTogetherValidator(
                 queryset=Folder.objects.all(),
                 fields=['parent', 'name'],
-                message='A folder with that name already exists here.',
+                message=FormattableDict({'name': 'A folder with that name already exists here.'}),
             ),
             # This could also be implemented as a UniqueValidator on 'name',
             # but its easier to not explicitly redefine the whole serializer field
             serializers.UniqueTogetherValidator(
                 queryset=Folder.objects.filter(parent=None),
                 fields=['name'],
-                message='A root folder with that name already exists.',
+                message=FormattableDict({'name': 'A root folder with that name already exists.'}),
             ),
             # folder_max_depth and unique_root_folder_per_tree are internal sanity constraints,
             # and do not need to be enforced as validators
@@ -80,7 +81,7 @@ class FolderSerializer(serializers.ModelSerializer):
             parent_id = attrs['parent_id'] if 'parent_id' in attrs else self.instance.parent_id
         if parent_id is not None and File.objects.filter(name=name, folder_id=parent_id).exists():
             raise serializers.ValidationError(
-                'A file with that name already exists here.', code='unique'
+                {'name': 'A file with that name already exists here.'}, code='unique'
             )
 
 
