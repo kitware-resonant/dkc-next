@@ -9,9 +9,6 @@ from dkc.core.models import Quota
 @admin.register(Quota)
 class QuotaAdmin(admin.ModelAdmin):
     list_display = ['id', 'user', 'human_used', 'human_allowed', 'usage_percent']
-    list_filter = [
-        ('user', admin.EmptyFieldListFilter),
-    ]
     list_select_related = ['user']
 
     search_fields = ['user__username']
