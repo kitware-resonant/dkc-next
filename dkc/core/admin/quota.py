@@ -17,11 +17,11 @@ class QuotaAdmin(admin.ModelAdmin):
 
     @admin_display(short_description='Used', admin_order_field='used')
     def human_used(self, obj: Quota) -> str:
-        return humanize.naturalsize(obj.used)
+        return humanize.naturalsize(obj.used, binary=True)
 
     @admin_display(short_description='Allowed', admin_order_field='used')
     def human_allowed(self, obj: Quota) -> str:
-        return humanize.naturalsize(obj.allowed)
+        return humanize.naturalsize(obj.allowed, binary=True)
 
     @admin_display(
         short_description='% Used',
