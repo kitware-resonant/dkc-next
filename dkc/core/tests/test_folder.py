@@ -5,24 +5,22 @@ import pytest
 from dkc.core.models.folder import MAX_DEPTH
 
 
+@pytest.mark.django_db
 def test_folder_name_invalid(folder_factory):
-    folder = folder_factory.build(name='name / withslash')
+    folder = folder_factory(name='name / withslash')
 
-    # Since the folder is not saved and added to a tree, other validation errors are also present,
-    # so it's critical to match the error by string content
     with pytest.raises(ValidationError, match='Name may not contain forward slashes'):
         folder.full_clean()
 
 
-def test_is_root_root(folder_factory):
-    folder = folder_factory.build()
+@pytest.mark.django_db
+def test_is_root_root(folder):
     assert folder.is_root is True
 
 
-def test_is_root_child(folder_factory):
-    folder = folder_factory.build()
-    child = folder_factory.build(parent=folder)
-    assert child.is_root is False
+@pytest.mark.django_db
+def test_is_root_child(child_folder):
+    assert child_folder.is_root is False
 
 
 @pytest.mark.django_db
@@ -87,11 +85,9 @@ def test_folder_sibling_names_unique_files(file, folder_factory):
 
 @pytest.mark.django_db
 def test_root_folder_names_unique(folder, folder_factory):
-    other_root = folder_factory.build(name=folder.name)
-    # Make sure foreign key references exist in database first
-    other_root.creator.save()
-    other_root.tree.save()
-    with pytest.raises(IntegrityError):
+    other_root = folder_factory()
+    other_root.name = folder.name
+    with pytest.raises(IntegrityError, match=r'folder_name'):
         other_root.save()
 
 
@@ -107,6 +103,8 @@ def test_folder_names_not_globally_unique(folder_factory):
 def test_increment_size(folder_factory, amount):
     initial_size = 100
     root = folder_factory(size=initial_size)
+    root.tree.quota.used = initial_size
+    root.tree.quota.save()
     child = folder_factory(parent=root, size=initial_size)
     grandchild = folder_factory(parent=child, size=initial_size)
 
@@ -118,14 +116,18 @@ def test_increment_size(folder_factory, amount):
     assert grandchild.size == new_size
     assert grandchild.parent.size == new_size
     assert grandchild.parent.parent.size == new_size
+    assert grandchild.parent.parent.tree.quota.used == new_size
 
 
 @pytest.mark.django_db
 def test_increment_size_negative(folder_factory):
     # Make the root too small
     root = folder_factory(size=5)
+    root.tree.quota.used = 10
+    root.tree.quota.save()
     child = folder_factory(parent=root, size=10)
 
     # Increment the child, which tests enforcement across propagation
-    with pytest.raises(IntegrityError, match=r'size'):
+    # An IntegrityError is expected, since this should cause a 500 if it actually happens
+    with pytest.raises(IntegrityError, match=r'folder_size'):
         child.increment_size(-10)

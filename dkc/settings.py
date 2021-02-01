@@ -40,6 +40,8 @@ class DkcMixin(ConfigMixin):
     ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
     ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 
+    DKC_DEFAULT_QUOTA = 3 << 30  # 3 GB
+
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
         configuration.INSTALLED_APPS += [

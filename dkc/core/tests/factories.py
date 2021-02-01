@@ -20,9 +20,14 @@ class UserFactory(factory.django.DjangoModelFactory):
 
 class TreeFactory(factory.django.DjangoModelFactory):
     public = False
+    # No need to instantiate a quota, just fetch from the user creating this
+    quota = factory.SelfAttribute('creator.quota')
 
     class Meta:
         model = Tree
+
+    class Params:
+        creator = factory.SubFactory(UserFactory)
 
 
 class FolderFactory(factory.django.DjangoModelFactory):
@@ -34,7 +39,10 @@ class FolderFactory(factory.django.DjangoModelFactory):
     user_metadata = _metadata_faker
     parent = None
     tree = factory.Maybe(
-        'parent', factory.SelfAttribute('parent.tree'), factory.SubFactory(TreeFactory)
+        'parent',
+        factory.SelfAttribute('parent.tree'),
+        # Make the new tree be created by (and use the quota of) this folder's creator
+        factory.SubFactory(TreeFactory, creator=factory.SelfAttribute('..creator')),
     )
     creator = factory.SubFactory(UserFactory)
 
@@ -51,13 +59,11 @@ class FileFactory(factory.django.DjangoModelFactory):
     creator = factory.SubFactory(UserFactory)
 
 
-class TreeWithRootFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = Tree
-
+class TreeWithRootFactory(TreeFactory):
     @factory.post_generation
     def root_folder(self, create, *args, **kwargs):
-        return FolderFactory(tree=self)
+        # Make the new folder be created by the same user as it's tree's quota
+        return FolderFactory(tree=self, creator=self.quota.user)
 
 
 class TermsFactory(factory.django.DjangoModelFactory):

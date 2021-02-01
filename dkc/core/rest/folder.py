@@ -182,7 +182,8 @@ class FolderViewSet(ModelViewSet):
             if not tree.has_permission(user, permission=Permission.write):
                 raise PermissionDenied()
         else:
-            tree = Tree.objects.create()
+            # Use the user's quota for the new tree
+            tree = Tree.objects.create(quota=user.quota)
             tree.grant_permission(PermissionGrant(user_or_group=user, permission=Permission.admin))
         serializer.save(tree=tree, creator=user)
 

@@ -5,7 +5,7 @@ from typing import Type
 from django.contrib.auth.models import User
 from django.core import validators
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import models, transaction
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
 from girder_utils.models import JSONObjectField
@@ -101,15 +101,19 @@ class Folder(TimeStampedModel, models.Model):
     def public(self) -> bool:
         return self.tree.public
 
+    @transaction.atomic
     def increment_size(self, amount: int) -> None:
         """
         Increment or decrement the Folder size.
 
-        This Folder and all of its ancestors' sizes will be updated atomically. ``amount`` may be
-        negative, but an operation resulting in a negative final size is illegal.
+        This Folder, all of its ancestors' sizes, and its quota will be updated atomically.
+        ``amount`` may be negative, but an operation resulting in a negative final size is illegal.
         """
         if amount == 0:
             return
+
+        # Do this first, in case it fails
+        self.tree.quota.increment(amount)
 
         ancestor_pks = [folder.pk for folder in self.ancestors]
         Folder.objects.filter(pk__in=ancestor_pks).update(size=(models.F('size') + amount))

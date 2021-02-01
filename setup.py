@@ -51,6 +51,7 @@ setup(
         'django-s3-file-field[minio]',
         'djangorestframework',
         'drf-yasg',
+        'humanize',
         # Production-only
         'gunicorn',
         # Development-only

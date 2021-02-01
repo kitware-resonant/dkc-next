@@ -20,6 +20,8 @@ from guardian.utils import get_identity
 
 from dkc.core.permissions import Permission, PermissionGrant
 
+from .quota import Quota
+
 if TYPE_CHECKING:
     # Prevent circular import
     from .folder import Folder
@@ -27,6 +29,8 @@ if TYPE_CHECKING:
 
 class Tree(models.Model):
     public: bool = models.BooleanField(default=False)
+    # Prevent deletion of a Quota if it has Trees referencing it
+    quota = models.ForeignKey(Quota, on_delete=models.PROTECT, related_name='trees')
 
     @property
     def root_folder(self) -> Folder:
