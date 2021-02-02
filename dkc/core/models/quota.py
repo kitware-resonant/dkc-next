@@ -25,7 +25,7 @@ class Quota(models.Model):
     allowed = models.PositiveBigIntegerField(default=_default_user_quota)
 
     # OneToOneField ensures that only one Quota per User exists
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='quota')
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
 
     @transaction.atomic
     def increment(self, amount: int) -> None:
