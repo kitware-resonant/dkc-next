@@ -28,7 +28,7 @@ def _populate_subtree(
 @click.argument('files', type=click.INT, default=3)
 @click.option('--user-id', type=click.INT)
 def command(depth: int, branching: int, files: int, user_id: typing.Optional[int]):
-    user = User.objects.get(id=user_id) if user_id is not None else UserFactory()
+    user = UserFactory() if user_id is None else User.objects.get(id=user_id)
     _populate_subtree(None, depth, user, branching, files)
     for tree in Tree.objects.all():
         tree.grant_permission(PermissionGrant(user_or_group=user, permission=Permission.admin))
