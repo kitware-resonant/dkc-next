@@ -12,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from dkc.core.models import File, Folder, Terms, TermsAgreement, Tree
+from dkc.core.models import File, Folder, Quota, Terms, TermsAgreement, Tree
 from dkc.core.permissions import (
     HasAccess,
     IsAdmin,
@@ -92,6 +92,12 @@ class FolderSerializer(serializers.ModelSerializer):
 class FolderUpdateSerializer(FolderSerializer):
     class Meta(FolderSerializer.Meta):
         read_only_fields = FolderSerializer.Meta.read_only_fields + ['parent']
+
+
+class FolderQuotaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quota
+        fields = ['allowed', 'used']
 
 
 class TermsSerializer(serializers.ModelSerializer):
@@ -197,6 +203,14 @@ class FolderViewSet(ModelViewSet):
         # Start with the root folder
         ancestors = folder.ancestors[::-1]
         serializer = self.get_serializer(ancestors, many=True)
+        return Response(serializer.data)
+
+    @swagger_auto_schema(responses={200: FolderQuotaSerializer})
+    @action(detail=True, queryset=Folder.objects.select_related('tree__quota'))
+    def quota(self, request, pk=None):
+        """Retrieve size quota information for a folder."""
+        folder = self.get_object()
+        serializer = FolderQuotaSerializer(folder.tree.quota)
         return Response(serializer.data)
 
     @swagger_auto_schema(

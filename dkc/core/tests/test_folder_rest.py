@@ -1,3 +1,4 @@
+from django.conf import settings
 import pytest
 
 from dkc.core.models import File, Folder, Tree
@@ -192,3 +193,12 @@ def test_folder_default_ordering(admin_api_client, folder_factory):
     resp = admin_api_client.get('/api/v2/folders', data={'parent': 'null'})
     assert resp.status_code == 200
     assert [f['name'] for f in resp.data['results']] == ['A', 'B', 'C']
+
+
+@pytest.mark.django_db
+def test_folder_rest_get_quota(admin_api_client, folder):
+    resp = admin_api_client.get(f'/api/v2/folders/{folder.id}/quota')
+    assert resp.status_code == 200
+    assert set(resp.data.keys()) == {'used', 'allowed'}
+    assert resp.data['used'] == 0
+    assert resp.data['allowed'] == settings.DKC_DEFAULT_QUOTA
