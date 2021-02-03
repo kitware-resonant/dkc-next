@@ -34,7 +34,7 @@ class File(TimeStampedModel, models.Model):
         ],
     )
     description = models.TextField(max_length=3000, blank=True)
-    size = models.PositiveBigIntegerField(editable=False)
+    size = models.PositiveBigIntegerField()
     content_type = models.CharField(max_length=255, default='application/octet-stream')
     blob = S3FileField()
     sha512 = models.CharField(max_length=128, blank=True, default='', db_index=True, editable=False)
@@ -84,12 +84,8 @@ class File(TimeStampedModel, models.Model):
 
 @receiver(models.signals.pre_save, sender=File)
 def _file_pre_save(sender: Type[File], instance: File, **kwargs):
-    # TODO if we allow changing a file's blob, we also need to update the size
-
+    # TODO if we allow changing a file's blob & size, we'll need more logic here
     if not instance.pk:
-        # TODO: Test how this works in minio
-        instance.size = instance.blob.size
-
         instance.folder.increment_size(instance.size)
 
 

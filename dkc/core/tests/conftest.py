@@ -25,6 +25,11 @@ def child_folder(folder, folder_factory):
 
 
 @pytest.fixture
+def pending_file(file_factory):
+    return file_factory(size=42, blob=None, content_type='text/plain')
+
+
+@pytest.fixture
 def public_folder(folder_factory):
     return folder_factory(tree__public=True)
 

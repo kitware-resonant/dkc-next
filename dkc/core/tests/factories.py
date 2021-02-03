@@ -54,6 +54,7 @@ class FileFactory(factory.django.DjangoModelFactory):
     name = factory.Faker('file_name')
     description = factory.Faker('paragraph')
     blob = factory.django.FileField(data=b'fakefilebytes', filename='fake.txt')
+    size = factory.LazyAttribute(lambda obj: obj.blob.size)
     user_metadata = _metadata_faker
     folder = factory.SubFactory(FolderFactory)
     creator = factory.SubFactory(UserFactory)
