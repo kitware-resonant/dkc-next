@@ -19,22 +19,25 @@ class UserFactory(factory.django.DjangoModelFactory):
 
 
 class TreeFactory(factory.django.DjangoModelFactory):
-    public = False
-    # No need to instantiate a quota, just fetch from the user creating this
-    quota = factory.SelfAttribute('creator.quota')
-
     class Meta:
         model = Tree
 
     class Params:
         creator = factory.SubFactory(UserFactory)
 
+    public = False
+    # No need to instantiate a quota, just fetch from the user creating this
+    quota = factory.SelfAttribute('creator.quota')
+
 
 class FolderFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = Folder
 
-    name = factory.Faker('word')
+    class Params:
+        name_base = factory.Faker('word')
+
+    name = factory.LazyAttributeSequence(lambda o, n: f'{o.name_base}-{n}')
     description = factory.Faker('paragraph')
     user_metadata = _metadata_faker
     parent = None
@@ -51,7 +54,11 @@ class FileFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = File
 
-    name = factory.Faker('file_name')
+    class Params:
+        name_base = factory.Faker('word')
+        name_ext = factory.Faker('file_extension')
+
+    name = factory.LazyAttributeSequence(lambda o, n: f'{o.name_base}-{n}.{o.name_ext}')
     description = factory.Faker('paragraph')
     blob = factory.django.FileField(data=b'fakefilebytes', filename='fake.txt')
     user_metadata = _metadata_faker
