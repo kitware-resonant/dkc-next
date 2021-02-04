@@ -94,7 +94,7 @@ class FolderUpdateSerializer(FolderSerializer):
         read_only_fields = FolderSerializer.Meta.read_only_fields + ['parent']
 
 
-class FolderQuotaSerializer(serializers.ModelSerializer):
+class QuotaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Quota
         fields = ['allowed', 'used']
@@ -205,12 +205,12 @@ class FolderViewSet(ModelViewSet):
         serializer = self.get_serializer(ancestors, many=True)
         return Response(serializer.data)
 
-    @swagger_auto_schema(responses={200: FolderQuotaSerializer})
+    @swagger_auto_schema(responses={200: QuotaSerializer})
     @action(detail=True, queryset=Folder.objects.select_related('tree__quota'))
     def quota(self, request, pk=None):
         """Retrieve size quota information for a folder."""
         folder = self.get_object()
-        serializer = FolderQuotaSerializer(folder.tree.quota)
+        serializer = QuotaSerializer(folder.tree.quota)
         return Response(serializer.data)
 
     @swagger_auto_schema(
