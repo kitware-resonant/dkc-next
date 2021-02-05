@@ -43,11 +43,7 @@ def test_file_rest_create_process(admin_api_client, folder):
 def test_file_rest_download_pending_file(admin_api_client, pending_file):
     """Test downloading a file prior to its blob being set does something sane."""
     resp = admin_api_client.get(f'/api/v2/files/{pending_file.id}/download')
-    assert resp.status_code == 200
-    assert b''.join(resp.streaming_content) == b''
-    assert resp['content-type'] == pending_file.content_type
-    assert resp['content-length'] == '0'
-    assert pending_file.name in resp['content-disposition']
+    assert resp.status_code == 204
 
 
 @pytest.mark.django_db

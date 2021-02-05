@@ -1,11 +1,10 @@
-from io import BytesIO
-
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
-from django.http import FileResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from dkc.core.models import File, Folder
@@ -93,6 +92,6 @@ class FileViewSet(ModelViewSet):
     @action(detail=True)
     def download(self, request, pk=None):
         file = get_object_or_404(File, pk=pk)
-        if file.blob:  # FileFields are falsy when not populated with a file
+        if file.blob:  # FieldFiles are falsy when not populated with a file
             return HttpResponseRedirect(file.blob.url)
-        return FileResponse(BytesIO(), filename=file.name, content_type=file.content_type)
+        return Response(status=204)
