@@ -37,7 +37,7 @@ class FileAdmin(admin.ModelAdmin):
     autocomplete_fields = ['folder']
 
     def get_readonly_fields(self, request, obj=None):
-        fields = ['sha512', 'size', 'created', 'modified', 'creator']
+        fields = ['sha512', 'created', 'modified']
         # Allow setting of folder only on initial creation
         if obj is None:
             return fields

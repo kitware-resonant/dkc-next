@@ -4,6 +4,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
 from dkc.core.models import File, Folder
@@ -22,7 +23,6 @@ class FileSerializer(serializers.ModelSerializer):
             'description',
             'size',
             'content_type',
-            'blob',
             'sha512',
             'folder',
             'creator',
@@ -64,7 +64,8 @@ class FileSerializer(serializers.ModelSerializer):
 
 class FileUpdateSerializer(FileSerializer):
     class Meta(FileSerializer.Meta):
-        read_only_fields = FileSerializer.Meta.read_only_fields + ['folder']
+        fields = FileSerializer.Meta.fields + ['blob']
+        read_only_fields = FileSerializer.Meta.read_only_fields + ['folder', 'size']
 
 
 class FileViewSet(ModelViewSet):
@@ -91,4 +92,6 @@ class FileViewSet(ModelViewSet):
     @action(detail=True)
     def download(self, request, pk=None):
         file = get_object_or_404(File, pk=pk)
-        return HttpResponseRedirect(file.blob.url)
+        if file.blob:  # FieldFiles are falsy when not populated with a file
+            return HttpResponseRedirect(file.blob.url)
+        return Response(status=204)
