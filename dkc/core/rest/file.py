@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -88,9 +89,15 @@ class FileViewSet(ModelViewSet):
             raise PermissionDenied()
         serializer.save(creator=user)
 
-    # TODO figure out how to indicate this response type in the OpenAPI schema
+    @swagger_auto_schema(
+        responses={
+            204: 'This file is pending or has no associated content.',
+            302: 'You will be redirected to download the file contents.',
+        },
+    )
     @action(detail=True)
     def download(self, request, pk=None):
+        """Download a file."""
         file = get_object_or_404(File, pk=pk)
         if file.blob:  # FieldFiles are falsy when not populated with a file
             return HttpResponseRedirect(file.blob.url)
