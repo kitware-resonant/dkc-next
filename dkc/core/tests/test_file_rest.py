@@ -35,7 +35,7 @@ def test_file_rest_create_process(admin_api_client, folder):
     assert resp.data['size'] == 42
     folder.refresh_from_db()
     assert folder.size == 42
-    saved_file = File.objects.get(pk=resp.data['id'])
+    saved_file = File.objects.get(id=resp.data['id'])
     assert bool(saved_file.blob) is False
 
 
@@ -60,4 +60,4 @@ def test_file_rest_set_blob(admin_api_client, pending_file, s3ff_field_value):
     assert resp.status_code == 200
     assert resp.data['size'] == pending_file.size
     pending_file.refresh_from_db()
-    assert bool(pending_file.blob) is True
+    assert pending_file.blob
