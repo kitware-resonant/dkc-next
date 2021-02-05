@@ -1,3 +1,4 @@
+from django.conf import settings
 import pytest
 
 from dkc.core.models import File
@@ -61,3 +62,17 @@ def test_file_rest_set_blob(admin_api_client, pending_file, s3ff_field_value):
     assert resp.data['size'] == pending_file.size
     pending_file.refresh_from_db()
     assert pending_file.blob
+
+
+@pytest.mark.django_db
+def test_quota_enforcement(admin_api_client, folder):
+    resp = admin_api_client.post(
+        '/api/v2/files',
+        data={
+            'name': 'name.txt',
+            'folder': folder.id,
+            'size': settings.DKC_DEFAULT_QUOTA + 1,
+        },
+    )
+    assert resp.status_code == 400
+    assert resp.data == {'size': ['This file would exceed the size quota for this folder.']}
