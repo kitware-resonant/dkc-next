@@ -2,10 +2,11 @@ from typing import Type
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from django.db import IntegrityError, models, transaction
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
+from dkc.core.exceptions import QuotaLimitedError
 
 
 def _default_user_quota() -> int:
@@ -46,9 +47,7 @@ class Quota(models.Model):
             Quota.objects.filter(pk=self.pk).update(used=(models.F('used') + amount))
         except IntegrityError as e:
             if '"used_lte_allowed"' in str(e):
-                raise ValidationError(
-                    'Root folder size quota would be exceeded: ' f'{self.used}B > {self.allowed}B.'
-                )
+                raise QuotaLimitedError()
             else:
                 raise
 

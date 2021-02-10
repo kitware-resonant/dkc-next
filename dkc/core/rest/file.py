@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
+from dkc.core.exceptions import QuotaLimitedError
 from dkc.core.models import File, Folder
 from dkc.core.permissions import HasAccess, Permission, PermissionFilterBackend
 
@@ -86,7 +87,12 @@ class FileViewSet(ModelViewSet):
         user: User = self.request.user
         if not folder.has_permission(user, permission=Permission.write):
             raise PermissionDenied()
-        serializer.save(creator=user)
+        try:
+            serializer.save(creator=user)
+        except QuotaLimitedError:
+            raise serializers.ValidationError(
+                {'size': ['This file would exceed the size quota for this folder.']}
+            )
 
     # TODO figure out how to indicate this response type in the OpenAPI schema
     @action(detail=True)
