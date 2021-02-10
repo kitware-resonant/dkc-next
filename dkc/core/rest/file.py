@@ -97,7 +97,7 @@ class FileViewSet(ModelViewSet):
 
     @swagger_auto_schema(
         responses={
-            204: 'This file is pending or has no associated content.',
+            204: 'This file is pending and has no associated content.',
             302: 'You will be redirected to download the file contents.',
         },
     )
