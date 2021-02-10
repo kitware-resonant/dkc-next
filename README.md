@@ -5,7 +5,7 @@ This is the simplest configuration for developers to start with.
 
 ### Initial Setup
 1. Run `docker-compose run --rm django ./manage.py migrate`
-2. Run `docker-compose run --rm django ./manage.py createsuperuser` 
+2. Run `docker-compose run --rm django ./manage.py createsuperuser`
    and follow the prompts to create your own user
 
 ### Run Application
@@ -85,3 +85,10 @@ Useful sub-commands include:
 
 To automatically reformat all code to comply with
 some (but not all) of the style checks, run `tox -e format`.
+
+### Coverage
+
+The test environment has `pytest-cov` installed, so pass any options you want
+for coverage reporting. To generate an HTML coverage report, run:
+
+`tox -e test -- --cov-report=html --cov=dkc`
