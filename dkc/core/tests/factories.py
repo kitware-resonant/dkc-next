@@ -11,7 +11,10 @@ class UserFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = User
 
-    username = factory.Faker('user_name')
+    class Params:
+        username_base = factory.Faker('user_name')
+
+    username = factory.LazyAttributeSequence(lambda o, n: f'{o.username_base}{n}')
     email = factory.Faker('safe_email')
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
