@@ -1,6 +1,5 @@
 terraform {
   backend "remote" {
-    hostname     = "app.terraform.io"
     organization = "girder"
 
     workspaces {
@@ -37,7 +36,7 @@ locals {
 
 module "smtp" {
   source  = "girder/girder/aws//modules/smtp"
-  version = "0.7.0"
+  version = "0.8.0"
 
   fqdn            = local.api_fqdn
   project_slug    = "dkc-next"
@@ -51,7 +50,7 @@ resource "random_string" "django_secret" {
 
 module "api" {
   source  = "girder/django/heroku//modules/heroku"
-  version = "0.7.0"
+  version = "0.8.0"
 
   team_name = data.heroku_team.heroku.name
   app_name  = "dkc-next"
