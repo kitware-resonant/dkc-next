@@ -41,6 +41,7 @@ class DkcMixin(ConfigMixin):
     ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 
     DKC_DEFAULT_QUOTA = 3 << 30  # 3 GB
+    DKC_AUTHORIZED_UPLOAD_EXPIRATION_DAYS = 7
 
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
