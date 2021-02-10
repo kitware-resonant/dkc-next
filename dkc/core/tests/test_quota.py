@@ -17,7 +17,7 @@ def test_quota_increment(tree):
 
 @pytest.mark.django_db
 def test_quota_increment_failure(tree):
-    with pytest.raises(ValidationError, match=r'Root folder size quota would be exceeded'):
+    with pytest.raises(ValidationError, match=r'Tree size quota would be exceeded'):
         tree.quota.increment(tree.quota.allowed + 1)
     assert tree.quota.used == 0
 
