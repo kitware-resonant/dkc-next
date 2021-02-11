@@ -125,7 +125,7 @@ class FileViewSet(ModelViewSet):
             upload_id = Signer().unsign(authorization)
         except BadSignature:
             logger = logging.getLogger('django.security.SuspiciousOperation')
-            logger.exception('Authorized upload signature tampering detected')
+            logger.warning('Authorized upload signature tampering detected.')
             raise PermissionDenied('Invalid authorization signature.')
 
         try:

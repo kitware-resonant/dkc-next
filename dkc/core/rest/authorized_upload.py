@@ -38,9 +38,6 @@ class CanDeleteAuthorization(BasePermission):
     def has_object_permission(self, request: Request, view: View, obj: AuthorizedUpload) -> bool:
         return view.action != 'destroy' or request.user.is_superuser or request.user == obj.creator
 
-    def has_permission(self, request: Request, view: View) -> bool:
-        return True
-
 
 class AuthorizedUploadViewSet(mixins.DestroyModelMixin, GenericViewSet):
     queryset = AuthorizedUpload.objects.all()
