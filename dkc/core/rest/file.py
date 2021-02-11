@@ -1,17 +1,23 @@
+import logging
 from typing import Dict
 
 from django.contrib.auth.models import User
-from django.core.exceptions import PermissionDenied
+from django.core.signing import BadSignature, Signer
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import BasePermission
+from rest_framework.request import Request
 from rest_framework.response import Response
+from rest_framework.views import View
 from rest_framework.viewsets import ModelViewSet
 
 from dkc.core.exceptions import QuotaLimitedError
-from dkc.core.models import File, Folder
+from dkc.core.models import AuthorizedUpload, File, Folder
 from dkc.core.permissions import HasAccess, Permission, PermissionFilterBackend
 
 from .filtering import ActionSpecificFilterBackend
@@ -84,11 +90,22 @@ class HashDownloadSerializer(serializers.Serializer):
     sha512 = serializers.CharField(min_length=128, max_length=128)
 
 
+class CreateWithAuthorizedUpload(BasePermission):
+    def has_object_permission(self, request, view, obj):
+        return False
+
+    def has_permission(self, request: Request, view: View) -> bool:
+        # This doesn't actually do the policy enforcement, it simply allows requests
+        # through if they are authorized upload requests. Enforcement is done in the
+        # view's `perform_create` method.
+        return view.action == 'create' and 'authorization' in request.data
+
+
 class FileViewSet(ModelViewSet):
     # The tree is required for 'access' and 'public' serializer fields
     queryset = File.objects.select_related('folder__tree')
 
-    permission_classes = [HasAccess]
+    permission_classes = [HasAccess | CreateWithAuthorizedUpload]
 
     filter_backends = [PermissionFilterBackend, ActionSpecificFilterBackend]
     filterset_fields = ['folder', 'sha512']
@@ -103,11 +120,39 @@ class FileViewSet(ModelViewSet):
         context['user'] = self.request.user
         return context
 
+    def _validate_authorized_upload(self, authorization: str, folder: Folder) -> User:
+        try:
+            upload_id = Signer().unsign(authorization)
+        except BadSignature:
+            logger = logging.getLogger('django.security.SuspiciousOperation')
+            logger.exception('Authorized upload signature tampering detected')
+            raise PermissionDenied('Invalid authorization signature.')
+
+        try:
+            upload: AuthorizedUpload = AuthorizedUpload.objects.select_related('creator').get(
+                pk=int(upload_id)
+            )
+        except AuthorizedUpload.DoesNotExist:
+            raise PermissionDenied('This upload authorization has been revoked.')
+
+        if upload.expires < timezone.now():
+            raise PermissionDenied(
+                'This upload authorization has expired. Please request a new link.'
+            )
+        if upload.folder.id != folder.id:
+            raise PermissionDenied('This upload was authorized to a different folder.')
+
+        return upload.creator
+
     def perform_create(self, serializer: FileSerializer):
         folder: Folder = serializer.validated_data['folder']
-        user: User = self.request.user
+        if 'authorization' in self.request.data:
+            user = self._validate_authorized_upload(self.request.data['authorization'], folder)
+        else:
+            user: User = self.request.user
+
         if not folder.has_permission(user, permission=Permission.write):
-            raise PermissionDenied()
+            raise PermissionDenied('You are not allowed to create files in this folder.')
         try:
             serializer.save(creator=user)
         except QuotaLimitedError:
