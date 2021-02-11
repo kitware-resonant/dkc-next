@@ -1,14 +1,10 @@
-from datetime import timedelta
 from typing import Dict
 
-from django.conf import settings
 from django.contrib.auth.models import Group, User
 from django.core.exceptions import PermissionDenied
-from django.core.signing import Signer
 from django.db import transaction
-from django.utils import timezone
 from django_filters import rest_framework as filters
-from drf_yasg.utils import no_body, swagger_auto_schema
+from drf_yasg.utils import swagger_auto_schema
 from guardian.utils import get_identity
 from rest_framework import serializers
 from rest_framework.decorators import action
@@ -16,12 +12,11 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 
-from dkc.core.models import AuthorizedUpload, File, Folder, Quota, Terms, TermsAgreement, Tree
+from dkc.core.models import File, Folder, Quota, Terms, TermsAgreement, Tree
 from dkc.core.permissions import (
     HasAccess,
     IsAdmin,
     IsReadable,
-    IsWriteable,
     Permission,
     PermissionFilterBackend,
     PermissionGrant,
@@ -29,17 +24,6 @@ from dkc.core.permissions import (
 
 from .filtering import ActionSpecificFilterBackend, IntegerOrNullFilter
 from .utils import FormattableDict
-
-
-class AuthorizedUploadSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = AuthorizedUpload
-        fields = ['id', 'created', 'creator', 'expires', 'folder', 'signature']
-
-    signature: str = serializers.SerializerMethodField()
-
-    def get_signature(self, upload: AuthorizedUpload) -> str:
-        return Signer().sign(str(upload.id))
 
 
 class FolderSerializer(serializers.ModelSerializer):
@@ -210,21 +194,6 @@ class FolderViewSet(ModelViewSet):
             tree = Tree.objects.create(quota=user.quota)
             tree.grant_permission(PermissionGrant(user_or_group=user, permission=Permission.admin))
         serializer.save(tree=tree, creator=user)
-
-    @swagger_auto_schema(
-        responses={201: AuthorizedUploadSerializer},
-        request_body=no_body,
-    )
-    @action(detail=True, methods=['post'], permission_classes=[IsWriteable])
-    def authorized_upload(self, request, pk=None):
-        """Authorize an upload to a folder on your behalf."""
-        folder = self.get_object()
-        expires = timezone.now() + timedelta(days=settings.DKC_AUTHORIZED_UPLOAD_EXPIRATION_DAYS)
-        upload = AuthorizedUpload.objects.create(
-            folder=folder, creator=request.user, expires=expires
-        )
-        serializer = AuthorizedUploadSerializer(upload)
-        return Response(serializer.data, status=201)
 
     @swagger_auto_schema(
         operation_description='Retrieve the path from the root folder to the requested folder.',

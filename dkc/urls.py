@@ -5,9 +5,10 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
-from dkc.core.rest import FileViewSet, FolderViewSet, UserViewSet
+from dkc.core.rest import AuthorizedUploadViewSet, FileViewSet, FolderViewSet, UserViewSet
 
 router = routers.SimpleRouter(trailing_slash=False)
+router.register(r'authorized_uploads', AuthorizedUploadViewSet)
 router.register(r'files', FileViewSet)
 router.register(r'folders', FolderViewSet)
 router.register(r'users', UserViewSet)

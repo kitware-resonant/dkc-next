@@ -91,7 +91,7 @@ class HashDownloadSerializer(serializers.Serializer):
 
 
 class CreateWithAuthorizedUpload(BasePermission):
-    def has_object_permission(self, request, view, obj):
+    def has_object_permission(self, request, view, obj) -> bool:
         return False
 
     def has_permission(self, request: Request, view: View) -> bool:
