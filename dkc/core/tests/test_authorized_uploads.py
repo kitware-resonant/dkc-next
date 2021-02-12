@@ -172,8 +172,7 @@ def test_authorized_upload_completion(api_client, authorized_upload, mailoutbox)
         data={'authorization': authorized_upload.data['signature']},
     )
     assert resp.status_code == 204
-    with pytest.raises(AuthorizedUpload.DoesNotExist):
-        AuthorizedUpload.objects.get(pk=authorized_upload.data['id'])
+    assert not AuthorizedUpload.objects.filter(pk=authorized_upload.data['id']).exists()
 
     assert len(mailoutbox) == 1
     assert mailoutbox[0].subject == 'Authorized upload complete'
