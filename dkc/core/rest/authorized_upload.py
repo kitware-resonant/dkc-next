@@ -1,11 +1,15 @@
 from datetime import timedelta
+import logging
 
 from django.conf import settings
-from django.core.signing import Signer
+from django.core.mail import send_mail
+from django.core.signing import BadSignature, Signer
 from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, serializers
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
@@ -30,6 +34,10 @@ class AuthorizedUploadSerializer(serializers.ModelSerializer):
 
 class CreateAuthorizedUploadSerializer(serializers.Serializer):
     folder = serializers.IntegerField()
+
+
+class CompleteAuthorizedUploadSerializer(serializers.Serializer):
+    authorization = serializers.CharField()
 
 
 class CanDeleteAuthorization(BasePermission):
@@ -64,3 +72,42 @@ class AuthorizedUploadViewSet(mixins.DestroyModelMixin, GenericViewSet):
         )
         serializer = AuthorizedUploadSerializer(upload)
         return Response(serializer.data, status=201)
+
+    @swagger_auto_schema(
+        responses={204: 'The authorized upload was finalized.'},
+        request_body=CompleteAuthorizedUploadSerializer,
+    )
+    @action(
+        detail=True, methods=['post'], queryset=AuthorizedUpload.objects.select_related('folder')
+    )
+    def completion(self, request, pk=None):
+        """Mark an authorized upload as complete and notify its originator."""
+        serializer = CompleteAuthorizedUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            signed_id = Signer().unsign(serializer.validated_data['authorization'])
+        except BadSignature:
+            logger = logging.getLogger('django.security.SuspiciousOperation')
+            logger.warning('Authorized upload signature tampering detected.')
+            raise PermissionDenied('Invalid authorization signature.')
+
+        if signed_id != pk:
+            raise PermissionDenied('Mismatched authorized upload ID.')
+
+        upload = self.get_object()
+        context = {
+            'folder': upload.folder,
+            'folder_url': f'{settings.DKC_SPA_URL}#/folders/{upload.folder.id}',
+        }
+
+        send_mail(
+            subject='Authorized upload complete',
+            message=render_to_string('email/authorized_upload_complete.txt', context),
+            html_message=render_to_string('email/authorized_upload_complete.html', context),
+            from_email=None,
+            recipient_list=[upload.creator.email],
+        )
+
+        upload.delete()
+        return Response(status=204)

@@ -1,0 +1,4 @@
+This email is to let you know that a user has completed an upload you authorized
+in the folder "{{ folder.abs_path }}".
+
+The files they uploaded can be seen here: {{ folder_url }}

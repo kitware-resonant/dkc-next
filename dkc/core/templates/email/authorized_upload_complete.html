@@ -1,0 +1,21 @@
+<html>
+
+<body style="max-width: 560px; color: #525151; background-color: #f9f5f5; font-family: helvetica; margin: 0 auto;">
+    <center style="background: #fff; border-radius: 5px; box-shadow: 0 4px 20px #ddd; padding: 25px;">
+        <div style="background-color: #eee; color: #474d52; padding: 14px; margin: 0 0 30px;">
+            &check; Authorized upload complete
+        </div>
+        <p>
+            This email is to let you know that a user has completed an upload you authorized in the folder:
+        </p>
+        <p style="font-weight: bold;">{{ folder.abs_path }}</p>
+        <div style="margin-top: 30px;">
+            <a href="{{ folder_url }}"
+                style="background: #00a9a5; border-radius: 3px; color: #fff; padding: 9px 13px; text-decoration: none;">
+                View folder contents &#8594;
+            </a>
+        </div>
+    </center>
+</body>
+
+</html>

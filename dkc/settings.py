@@ -42,6 +42,7 @@ class DkcMixin(ConfigMixin):
 
     DKC_DEFAULT_QUOTA = 3 << 30  # 3 GB
     DKC_AUTHORIZED_UPLOAD_EXPIRATION_DAYS = 7
+    DKC_SPA_URL = 'https://dkc-next-web.girderops.net/'
 
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:

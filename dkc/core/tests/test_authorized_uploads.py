@@ -139,3 +139,37 @@ def test_authorized_upload_delete_as_creator(user, api_client, folder):
     api_client.force_authenticate(user)
     resp = api_client.delete(f'/api/v2/authorized_uploads/{authorized_upload.id}')
     assert resp.status_code == 204
+
+
+@pytest.mark.django_db
+def test_authorized_upload_completion_bad_signature(api_client, authorized_upload):
+    resp = api_client.post(
+        f'/api/v2/authorized_uploads/{authorized_upload.data["id"]}/completion',
+        data={'authorization': f'1{authorized_upload.data["signature"]}'},
+    )
+    assert resp.status_code == 403
+    assert resp.json() == {'detail': 'Invalid authorization signature.'}
+
+
+@pytest.mark.django_db
+def test_authorized_upload_completion_id_mismatch(api_client, authorized_upload):
+    resp = api_client.post(
+        f'/api/v2/authorized_uploads/{authorized_upload.data["id"] + 1}/completion',
+        data={'authorization': authorized_upload.data['signature']},
+    )
+    assert resp.status_code == 403
+    assert resp.json() == {'detail': 'Mismatched authorized upload ID.'}
+
+
+@pytest.mark.django_db
+def test_authorized_upload_completion(api_client, authorized_upload, mailoutbox):
+    resp = api_client.post(
+        f'/api/v2/authorized_uploads/{authorized_upload.data["id"]}/completion',
+        data={'authorization': authorized_upload.data['signature']},
+    )
+    assert resp.status_code == 204
+    with pytest.raises(AuthorizedUpload.DoesNotExist):
+        AuthorizedUpload.objects.get(pk=authorized_upload.data['id'])
+
+    assert len(mailoutbox) == 1
+    assert mailoutbox[0].subject == 'Authorized upload complete'
