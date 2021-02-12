@@ -39,7 +39,7 @@ def test_authorized_upload_signature_check(authorized_upload, api_client):
         },
     )
     assert resp.status_code == 403
-    assert resp.json() == {'detail': 'Invalid authorization signature.'}
+    assert resp.data == {'detail': 'Invalid authorization signature.'}
 
 
 @pytest.mark.django_db
@@ -55,7 +55,7 @@ def test_authorized_upload_folder_check(authorized_upload, api_client, folder_fa
         },
     )
     assert resp.status_code == 403
-    assert resp.json() == {'detail': 'This upload was authorized to a different folder.'}
+    assert resp.data == {'detail': 'This upload was authorized to a different folder.'}
 
 
 @pytest.mark.django_db
@@ -76,7 +76,7 @@ def test_authorized_upload_expired(api_client, folder, user_factory):
         },
     )
     assert resp.status_code == 403
-    assert resp.json() == {
+    assert resp.data == {
         'detail': 'This upload authorization has expired. Please request a new link.'
     }
 
@@ -94,7 +94,7 @@ def test_authorized_upload_deleted(api_client, authorized_upload, folder):
         },
     )
     assert resp.status_code == 403
-    assert resp.json() == {'detail': 'This upload authorization has been revoked.'}
+    assert resp.data == {'detail': 'This upload authorization has been revoked.'}
 
 
 @pytest.mark.django_db
@@ -117,7 +117,7 @@ def test_authorized_upload_delete_permission(api_client, user, authorized_upload
     api_client.force_authenticate(user)
     resp = api_client.delete(f'/api/v2/authorized_uploads/{authorized_upload.data["id"]}')
     assert resp.status_code == 403
-    assert resp.json() == {'detail': 'Only the creator of an authorized upload may delete it.'}
+    assert resp.data == {'detail': 'Only the creator of an authorized upload may delete it.'}
 
 
 @pytest.mark.django_db
@@ -147,7 +147,7 @@ def test_authorized_upload_completion_bad_signature(api_client, authorized_uploa
         data={'authorization': f'1{authorized_upload.data["signature"]}'},
     )
     assert resp.status_code == 403
-    assert resp.json() == {'detail': 'Invalid authorization signature.'}
+    assert resp.data == {'detail': 'Invalid authorization signature.'}
 
 
 @pytest.mark.django_db
@@ -162,7 +162,7 @@ def test_authorized_upload_completion_id_mismatch(api_client, authorized_upload,
         data={'authorization': authorized_upload.data['signature']},
     )
     assert resp.status_code == 403
-    assert resp.json() == {'detail': 'Invalid authorization signature.'}
+    assert resp.data == {'detail': 'Invalid authorization signature.'}
 
 
 @pytest.mark.django_db
