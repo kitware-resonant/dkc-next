@@ -44,11 +44,17 @@ class DkcMixin(ConfigMixin):
 
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
-        configuration.INSTALLED_APPS += [
+        # Install local apps first, to ensure any overridden resources are found first
+        configuration.INSTALLED_APPS = [
             'dkc.core.apps.CoreConfig',
+        ] + configuration.INSTALLED_APPS
+
+        # Install additional apps
+        configuration.INSTALLED_APPS += [
             's3_file_field',
             'guardian',
         ]
+
         configuration.AUTHENTICATION_BACKENDS += [
             'guardian.backends.ObjectPermissionBackend',
         ]
