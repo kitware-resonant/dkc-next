@@ -1,3 +1,6 @@
+from datetime import timedelta
+
+from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import signing
 from django.db import models
@@ -14,7 +17,10 @@ class AuthorizedUpload(models.Model):
         User, on_delete=models.CASCADE, related_name='authorized_uploads', editable=False
     )
     created = CreationDateTimeField()
-    expires = models.DateTimeField(editable=False)
+
+    @property
+    def expires(self):
+        return self.created + timedelta(days=settings.DKC_AUTHORIZED_UPLOAD_EXPIRATION_DAYS)
 
     @property
     def signature(self):

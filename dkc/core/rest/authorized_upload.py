@@ -1,4 +1,3 @@
-from datetime import timedelta
 import logging
 
 from django.conf import settings
@@ -6,7 +5,6 @@ from django.core import signing
 from django.core.mail import send_mail
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
-from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, serializers
 from rest_framework.decorators import action
@@ -61,10 +59,7 @@ class AuthorizedUploadViewSet(mixins.DestroyModelMixin, GenericViewSet):
         if not folder.has_permission(request.user, Permission.write):
             raise PermissionDenied('You are not allowed to create files in this folder.')
 
-        expires = timezone.now() + timedelta(days=settings.DKC_AUTHORIZED_UPLOAD_EXPIRATION_DAYS)
-        upload = AuthorizedUpload.objects.create(
-            folder=folder, creator=request.user, expires=expires
-        )
+        upload = AuthorizedUpload.objects.create(folder=folder, creator=request.user)
         serializer = AuthorizedUploadSerializer(upload)
         return Response(serializer.data, status=201)
 
