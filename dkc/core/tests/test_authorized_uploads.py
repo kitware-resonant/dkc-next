@@ -1,6 +1,5 @@
 from datetime import timedelta
 
-from django.core.signing import Signer
 from django.utils import timezone
 import pytest
 
@@ -73,7 +72,7 @@ def test_authorized_upload_expired(api_client, folder, user_factory):
             'name': 'foo.txt',
             'size': 123,
             'folder': folder.id,
-            'authorization': Signer().sign(authorized_upload.id),
+            'authorization': authorized_upload.signature,
         },
     )
     assert resp.status_code == 403
@@ -152,13 +151,18 @@ def test_authorized_upload_completion_bad_signature(api_client, authorized_uploa
 
 
 @pytest.mark.django_db
-def test_authorized_upload_completion_id_mismatch(api_client, authorized_upload):
+def test_authorized_upload_completion_id_mismatch(api_client, authorized_upload, user, folder):
+    other_upload = AuthorizedUpload.objects.create(
+        creator=user,
+        folder=folder,
+        expires=timezone.now() + timedelta(days=1),
+    )
     resp = api_client.post(
-        f'/api/v2/authorized_uploads/{authorized_upload.data["id"] + 1}/completion',
+        f'/api/v2/authorized_uploads/{other_upload.id}/completion',
         data={'authorization': authorized_upload.data['signature']},
     )
     assert resp.status_code == 403
-    assert resp.json() == {'detail': 'Mismatched authorized upload ID.'}
+    assert resp.json() == {'detail': 'Invalid authorization signature.'}
 
 
 @pytest.mark.django_db

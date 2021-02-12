@@ -2,8 +2,8 @@ from datetime import timedelta
 import logging
 
 from django.conf import settings
+from django.core import signing
 from django.core.mail import send_mail
-from django.core.signing import BadSignature, Signer
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -25,11 +25,6 @@ class AuthorizedUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuthorizedUpload
         fields = ['id', 'created', 'creator', 'expires', 'folder', 'signature']
-
-    signature: str = serializers.SerializerMethodField()
-
-    def get_signature(self, upload: AuthorizedUpload) -> str:
-        return Signer().sign(str(upload.id))
 
 
 class CreateAuthorizedUploadSerializer(serializers.Serializer):
@@ -85,17 +80,15 @@ class AuthorizedUploadViewSet(mixins.DestroyModelMixin, GenericViewSet):
         serializer = CompleteAuthorizedUploadSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
+        upload = self.get_object()
+
         try:
-            signed_id = Signer().unsign(serializer.validated_data['authorization'])
-        except BadSignature:
+            upload.verify_signature(serializer.validated_data['authorization'])
+        except signing.BadSignature:
             logger = logging.getLogger('django.security.SuspiciousOperation')
             logger.warning('Authorized upload signature tampering detected.')
             raise PermissionDenied('Invalid authorization signature.')
 
-        if signed_id != pk:
-            raise PermissionDenied('Mismatched authorized upload ID.')
-
-        upload = self.get_object()
         context = {
             'folder': upload.folder,
             'folder_url': f'{settings.DKC_SPA_URL}#/folders/{upload.folder.id}',

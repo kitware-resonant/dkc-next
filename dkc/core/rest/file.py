@@ -2,7 +2,7 @@ import logging
 from typing import Dict
 
 from django.contrib.auth.models import User
-from django.core.signing import BadSignature, Signer
+from django.core import signing
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -122,15 +122,18 @@ class FileViewSet(ModelViewSet):
 
     def _validate_authorized_upload(self, authorization: str, folder: Folder) -> User:
         try:
-            upload_id = Signer().unsign(authorization)
-        except BadSignature:
+            signed_obj = signing.loads(authorization)
+        except signing.BadSignature:
             logger = logging.getLogger('django.security.SuspiciousOperation')
             logger.warning('Authorized upload signature tampering detected.')
             raise PermissionDenied('Invalid authorization signature.')
 
+        if signed_obj.get('scope') != 'authorized_upload':
+            raise PermissionDenied('Invalid signature scope.')
+
         try:
             upload: AuthorizedUpload = AuthorizedUpload.objects.select_related('creator').get(
-                pk=int(upload_id)
+                pk=signed_obj['id']
             )
         except AuthorizedUpload.DoesNotExist:
             raise PermissionDenied('This upload authorization has been revoked.')
