@@ -3,7 +3,6 @@ import logging
 from django.conf import settings
 from django.core import signing
 from django.core.mail import send_mail
-from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import mixins, serializers
@@ -15,7 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import View
 from rest_framework.viewsets import GenericViewSet
 
-from dkc.core.models import AuthorizedUpload, Folder
+from dkc.core.models import AuthorizedUpload
 from dkc.core.permissions import Permission
 
 
@@ -23,10 +22,6 @@ class AuthorizedUploadSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuthorizedUpload
         fields = ['id', 'created', 'creator', 'expires', 'folder', 'signature']
-
-
-class CreateAuthorizedUploadSerializer(serializers.Serializer):
-    folder = serializers.IntegerField()
 
 
 class CompleteAuthorizedUploadSerializer(serializers.Serializer):
@@ -46,21 +41,17 @@ class AuthorizedUploadViewSet(mixins.DestroyModelMixin, GenericViewSet):
     permission_classes = [CanDeleteAuthorization]
     serializer_class = AuthorizedUploadSerializer
 
-    @swagger_auto_schema(
-        responses={201: AuthorizedUploadSerializer},
-        request_body=CreateAuthorizedUploadSerializer,
-    )
     def create(self, request, pk=None):
         """Authorize an upload to a folder on your behalf."""
-        serializer = CreateAuthorizedUploadSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        folder = get_object_or_404(Folder, pk=serializer.validated_data['folder'])
+        folder = serializer.validated_data['folder']
 
         if not folder.has_permission(request.user, Permission.write):
             raise PermissionDenied('You are not allowed to create files in this folder.')
 
         upload = AuthorizedUpload.objects.create(folder=folder, creator=request.user)
-        serializer = AuthorizedUploadSerializer(upload)
+        serializer = self.get_serializer(upload)
         return Response(serializer.data, status=201)
 
     @swagger_auto_schema(

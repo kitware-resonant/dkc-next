@@ -10,9 +10,7 @@ from .folder import Folder
 
 
 class AuthorizedUpload(models.Model):
-    folder = models.ForeignKey(
-        Folder, on_delete=models.CASCADE, related_name='authorized_uploads', editable=False
-    )
+    folder = models.ForeignKey(Folder, on_delete=models.CASCADE, related_name='authorized_uploads')
     creator = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='authorized_uploads', editable=False
     )
