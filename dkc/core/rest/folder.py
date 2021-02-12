@@ -43,6 +43,7 @@ class FolderSerializer(serializers.ModelSerializer):
             'modified',
             'public',
             'access',
+            'user_metadata',
         ]
         read_only_fields = [
             'creator',

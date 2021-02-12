@@ -30,6 +30,7 @@ class FileSerializer(serializers.ModelSerializer):
             'creator',
             'created',
             'modified',
+            'user_metadata',
         ]
         read_only_fields = [
             'creator',
