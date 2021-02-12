@@ -41,21 +41,26 @@ setup(
         'django-admin-display',
         'django-allauth',
         'django-click',
-        'django-composed-configuration[dev,prod]>=0.10.0',
         'django-configurations[database,email]',
         'django-extensions',
         'django-filter',
         'django-guardian',
         'django-girder-utils>=0.8.0',
-        'django-oauth-toolkit==1.3.2',
+        'django-oauth-toolkit',
         'django-s3-file-field[minio]',
         'djangorestframework',
         'drf-yasg',
         'humanize',
         # Production-only
+        'django-composed-configuration[prod]',
         'gunicorn',
-        # Development-only
-        'django-debug-toolbar',
     ],
-    extras_require={'dev': ['ipython', 'tox']},
+    extras_require={
+        'dev': [
+            'django-composed-configuration[dev]',
+            'django-debug-toolbar',
+            'ipython',
+            'tox',
+        ]
+    },
 )
