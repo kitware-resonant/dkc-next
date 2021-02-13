@@ -43,6 +43,7 @@ class FileSerializer(serializers.ModelSerializer):
             'user_metadata',
             'access',
             'public',
+            'authorization',
         ]
         read_only_fields = [
             'creator',
@@ -58,6 +59,18 @@ class FileSerializer(serializers.ModelSerializer):
 
     def get_access(self, file: File) -> Dict[str, bool]:
         return file.folder.tree.get_access(self.context.get('user'))
+
+    authorization = serializers.CharField(write_only=True, required=False)
+
+    def create(self, validated_data: dict) -> File:
+        data_copy = validated_data.copy()
+        data_copy.pop('authorization', None)
+        return super().create(data_copy)
+
+    def update(self, instance: File, validated_data: dict) -> File:
+        data_copy = validated_data.copy()
+        data_copy.pop('authorization', None)
+        return super().update(instance, validated_data)
 
     def validate(self, attrs):
         self._validate_unique_folder_siblings(attrs)
@@ -149,8 +162,10 @@ class FileViewSet(ModelViewSet):
 
     def perform_create(self, serializer: FileSerializer):
         folder: Folder = serializer.validated_data['folder']
-        if 'authorization' in self.request.data:
-            user = self._validate_authorized_upload(self.request.data['authorization'], folder)
+        if 'authorization' in serializer.validated_data:
+            user = self._validate_authorized_upload(
+                serializer.validated_data['authorization'], folder
+            )
         else:
             user: User = self.request.user
 
