@@ -76,3 +76,24 @@ def test_quota_enforcement(admin_api_client, folder):
     )
     assert resp.status_code == 400
     assert resp.data == {'size': ['This file would exceed the size quota for this folder.']}
+
+
+@pytest.mark.django_db
+def test_hash_download_no_access(api_client, hashed_file):
+    resp = api_client.get('/api/v2/files/hash_download', data={'sha512': hashed_file.sha512})
+    assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_hash_download_public(api_client, hashed_file):
+    hashed_file.folder.tree.public = True
+    hashed_file.folder.tree.save()
+    resp = api_client.get('/api/v2/files/hash_download', data={'sha512': hashed_file.sha512})
+    assert resp.status_code == 302
+
+
+@pytest.mark.django_db
+def test_hash_download_case_insensitive(admin_api_client, hashed_file):
+    sha512 = hashed_file.sha512.upper()
+    resp = admin_api_client.get('/api/v2/files/hash_download', data={'sha512': sha512})
+    assert resp.status_code == 302
