@@ -61,6 +61,7 @@ setup(
             'django-debug-toolbar',
             'ipython',
             'tox',
+            'werkzeug',
         ]
     },
 )
