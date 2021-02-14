@@ -203,3 +203,15 @@ def test_folder_rest_get_quota(admin_api_client, folder):
         'used': 0,
         'allowed': settings.DKC_DEFAULT_QUOTA,
     }
+
+
+@pytest.mark.django_db
+def test_folder_name_validation_local_only(admin_api_client, folder):
+    resp = admin_api_client.post(
+        '/api/v2/folders',
+        data={
+            'parent': folder.id,
+            'name': folder.name,
+        },
+    )
+    assert resp.status_code == 201
