@@ -49,6 +49,10 @@ class File(TimeStampedModel, models.Model):
         return f'{self.folder.abs_path}{self.name}'
 
     @property
+    def public(self) -> bool:
+        return self.folder.tree.public
+
+    @property
     def short_checksum(self) -> Optional[str]:
         return self.sha512[:10] if self.sha512 else None
 

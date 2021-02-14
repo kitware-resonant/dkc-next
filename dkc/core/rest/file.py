@@ -1,3 +1,5 @@
+from typing import Dict
+
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponseRedirect
@@ -17,6 +19,8 @@ from .utils import FormattableDict
 
 
 class FileSerializer(serializers.ModelSerializer):
+    access: Dict[str, bool] = serializers.SerializerMethodField()
+
     class Meta:
         model = File
         fields = [
@@ -31,6 +35,8 @@ class FileSerializer(serializers.ModelSerializer):
             'created',
             'modified',
             'user_metadata',
+            'access',
+            'public',
         ]
         read_only_fields = [
             'creator',
@@ -43,6 +49,9 @@ class FileSerializer(serializers.ModelSerializer):
                 message=FormattableDict({'name': 'A file with that name already exists here.'}),
             ),
         ]
+
+    def get_access(self, file: File) -> Dict[str, bool]:
+        return file.folder.tree.get_access(self.context.get('user'))
 
     def validate(self, attrs):
         self._validate_unique_folder_siblings(attrs)
@@ -72,7 +81,8 @@ class FileUpdateSerializer(FileSerializer):
 
 
 class FileViewSet(ModelViewSet):
-    queryset = File.objects.all()
+    # The tree is required for 'access' and 'public' serializer fields
+    queryset = File.objects.select_related('folder__tree')
 
     permission_classes = [HasAccess]
 
@@ -83,6 +93,11 @@ class FileViewSet(ModelViewSet):
         if self.action in ['update', 'partial_update']:
             return FileUpdateSerializer
         return FileSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['user'] = self.request.user
+        return context
 
     def perform_create(self, serializer: FileSerializer):
         folder: Folder = serializer.validated_data['folder']
