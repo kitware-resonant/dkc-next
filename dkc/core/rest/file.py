@@ -131,9 +131,8 @@ class FileViewSet(ModelViewSet):
         qs = File.objects.filter(sha512=sha512).only('blob').order_by()
         qs = File.filter_by_permission(request.user, Permission.read, qs)
 
-        try:
-            file = qs[:1].get()
-        except File.DoesNotExist:
+        file = qs.first()
+        if not file:
             return Response(status=404)
 
         return HttpResponseRedirect(file.blob.url)
