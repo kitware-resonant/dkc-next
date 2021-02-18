@@ -162,7 +162,8 @@ class FolderPublicSerializer(serializers.Serializer):
 
 
 class FolderViewSet(ModelViewSet):
-    queryset = Folder.objects.all()
+    # Tree info is required for 'public' and 'access' serializer fields
+    queryset = Folder.objects.select_related('tree')
 
     permission_classes = [HasAccess]
 
