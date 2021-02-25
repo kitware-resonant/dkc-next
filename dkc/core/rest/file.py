@@ -81,7 +81,7 @@ class FileViewSet(ModelViewSet):
     permission_classes = [HasAccess]
 
     filter_backends = [PermissionFilterBackend, ActionSpecificFilterBackend]
-    filterset_fields = ['folder', 'sha512']
+    filterset_fields = ['folder', 'sha512', 'name']
 
     def get_serializer_class(self):
         if self.action in ['update', 'partial_update']:
