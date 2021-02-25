@@ -65,6 +65,13 @@ def test_file_rest_set_blob(admin_api_client, pending_file, s3ff_field_value):
 
 
 @pytest.mark.django_db
+def test_file_rest_set_blob_only_once(admin_api_client, file, s3ff_field_value):
+    resp = admin_api_client.patch(f'/api/v2/files/{file.id}', data={'blob': s3ff_field_value})
+    assert resp.status_code == 400
+    assert resp.data['blob'] == ["A file's blob may only be set once."]
+
+
+@pytest.mark.django_db
 def test_quota_enforcement(admin_api_client, folder):
     resp = admin_api_client.post(
         '/api/v2/files',

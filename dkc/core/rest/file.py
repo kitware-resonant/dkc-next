@@ -2,6 +2,7 @@ from typing import Dict
 
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
+from django.db import transaction
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
@@ -13,6 +14,7 @@ from rest_framework.viewsets import ModelViewSet
 from dkc.core.exceptions import QuotaLimitedError
 from dkc.core.models import File, Folder
 from dkc.core.permissions import HasAccess, Permission, PermissionFilterBackend
+from dkc.core.tasks import file_compute_sha512
 
 from .filtering import ActionSpecificFilterBackend
 from .utils import FormattableDict
@@ -114,6 +116,18 @@ class FileViewSet(ModelViewSet):
             raise serializers.ValidationError(
                 {'size': ['This file would exceed the size quota for this folder.']}
             )
+
+    def perform_update(self, serializer: FileUpdateSerializer) -> None:
+        with transaction.atomic():
+            # We lock this file row in order to make sure blob can only be set once
+            file: File = File.objects.select_for_update().get(pk=serializer.instance.pk)
+            if file.blob and 'blob' in serializer.validated_data:
+                raise serializers.ValidationError({'blob': ["A file's blob may only be set once."]})
+
+            serializer.save()
+
+        if 'blob' in serializer.validated_data:
+            file_compute_sha512.delay(file.pk)
 
     @swagger_auto_schema(
         responses={
