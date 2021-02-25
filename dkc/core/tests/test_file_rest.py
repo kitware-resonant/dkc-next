@@ -2,6 +2,7 @@ from django.conf import settings
 import pytest
 
 from dkc.core.models import File
+from dkc.core.tasks import file_compute_sha512
 
 
 @pytest.mark.django_db
@@ -54,7 +55,8 @@ def test_file_rest_cannot_update_size(admin_api_client, file):
 
 
 @pytest.mark.django_db
-def test_file_rest_set_blob(admin_api_client, pending_file, s3ff_field_value):
+def test_file_rest_set_blob(admin_api_client, pending_file, s3ff_field_value, mocker):
+    mocker.patch.object(file_compute_sha512, 'delay')
     resp = admin_api_client.patch(
         f'/api/v2/files/{pending_file.id}', data={'blob': s3ff_field_value}
     )
@@ -62,6 +64,8 @@ def test_file_rest_set_blob(admin_api_client, pending_file, s3ff_field_value):
     assert resp.data['size'] == pending_file.size
     pending_file.refresh_from_db()
     assert pending_file.blob
+
+    file_compute_sha512.delay.assert_called_once_with(pending_file.id)
 
 
 @pytest.mark.django_db
