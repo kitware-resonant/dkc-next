@@ -25,6 +25,13 @@ def child_folder(folder, folder_factory):
 
 
 @pytest.fixture
+def hashed_file(file):
+    file.compute_sha512()
+    file.save()
+    return file
+
+
+@pytest.fixture
 def pending_file(file_factory):
     return file_factory(size=42, blob=None, content_type='text/plain')
 

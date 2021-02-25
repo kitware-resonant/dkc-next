@@ -71,6 +71,10 @@ class FileUpdateSerializer(FileSerializer):
         read_only_fields = FileSerializer.Meta.read_only_fields + ['folder', 'size']
 
 
+class HashDownloadSerializer(serializers.Serializer):
+    sha512 = serializers.CharField(min_length=128, max_length=128)
+
+
 class FileViewSet(ModelViewSet):
     queryset = File.objects.all()
 
@@ -109,3 +113,26 @@ class FileViewSet(ModelViewSet):
         if file.blob:  # FieldFiles are falsy when not populated with a file
             return HttpResponseRedirect(file.blob.url)
         return Response(status=204)
+
+    @swagger_auto_schema(
+        query_serializer=HashDownloadSerializer,
+        responses={
+            200: None,  # needed to override default
+            302: 'You will be redirected to download the file contents.',
+            404: 'No file exists with the given hash.',
+        },
+    )
+    @action(detail=False, filterset_fields=[], pagination_class=None)
+    def hash_download(self, request):
+        """Download a file based on the hash of its contents."""
+        serializer = HashDownloadSerializer(data=request.query_params)
+        serializer.is_valid(raise_exception=True)
+        sha512 = serializer.validated_data['sha512'].lower()
+        qs = File.objects.filter(sha512=sha512).only('blob').order_by()
+        qs = File.filter_by_permission(request.user, Permission.read, qs)
+
+        file = qs.first()
+        if not file:
+            return Response(status=404)
+
+        return HttpResponseRedirect(file.blob.url)
