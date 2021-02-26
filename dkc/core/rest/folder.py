@@ -4,6 +4,7 @@ from django.contrib.auth.models import Group, User
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django_filters import rest_framework as filters
+from django_filters.filters import CharFilter
 from drf_yasg.utils import swagger_auto_schema
 from guardian.utils import get_identity
 from rest_framework import serializers
@@ -113,6 +114,7 @@ class PostTermsAgreementSerializer(serializers.Serializer):
 
 class FoldersFilterSet(filters.FilterSet):
     parent = IntegerOrNullFilter(required=True)
+    name = CharFilter()
 
 
 class FolderPermissionGrantSerializer(serializers.Serializer):
