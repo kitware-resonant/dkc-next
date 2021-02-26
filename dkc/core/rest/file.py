@@ -119,7 +119,12 @@ class FileViewSet(ModelViewSet):
 
     def perform_update(self, serializer: FileUpdateSerializer) -> None:
         with transaction.atomic():
-            # We lock this file row in order to make sure blob can only be set once
+            # We lock this file row in order to make sure `blob` can only be set once.
+            # This ensures that we launch at most one `file_compute_sha512` async jobs.
+            # If we didn't have atomicity on this operation, it would be possible to
+            # create a race condition between async hashing jobs that could cause a
+            # mismatch between the blob and the checksum. Aside from security implications,
+            # violations of the immutable blob policy could also cause data integrity failures.
             file: File = File.objects.select_for_update().get(pk=serializer.instance.pk)
             if file.blob and 'blob' in serializer.validated_data:
                 raise serializers.ValidationError({'blob': ["A file's blob may only be set once."]})
