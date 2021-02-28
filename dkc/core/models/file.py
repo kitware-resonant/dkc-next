@@ -88,7 +88,6 @@ class File(TimeStampedModel, models.Model):
 
 @receiver(models.signals.pre_save, sender=File)
 def _file_pre_save(sender: Type[File], instance: File, **kwargs):
-    # TODO if we allow changing a file's blob & size, we'll need more logic here
     if not instance.pk:
         instance.folder.increment_size(instance.size)
 
