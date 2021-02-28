@@ -61,6 +61,13 @@ def test_folder_rest_create_invalid_duplicate_root(admin_api_client, folder):
 
 
 @pytest.mark.django_db
+def test_folder_rest_create_name_validation_local_only(admin_api_client, folder):
+    # Ensure a sub-folder can have the same name as a root folder
+    resp = admin_api_client.post('/api/v2/folders', data={'parent': folder.id, 'name': folder.name})
+    assert resp.status_code == 201
+
+
+@pytest.mark.django_db
 def test_folder_rest_create_invalid_duplicate_sibling_folder(admin_api_client, child_folder):
     resp = admin_api_client.post(
         '/api/v2/folders', data={'name': child_folder.name, 'parent': child_folder.parent.id}

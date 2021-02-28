@@ -56,13 +56,6 @@ class FolderSerializer(serializers.ModelSerializer):
                 fields=['parent', 'name'],
                 message=FormattableDict({'name': 'A folder with that name already exists here.'}),
             ),
-            # This could also be implemented as a UniqueValidator on 'name',
-            # but its easier to not explicitly redefine the whole serializer field
-            serializers.UniqueTogetherValidator(
-                queryset=Folder.objects.filter(parent=None),
-                fields=['name'],
-                message=FormattableDict({'name': 'A root folder with that name already exists.'}),
-            ),
             # folder_max_depth and unique_root_folder_per_tree are internal sanity constraints,
             # and do not need to be enforced as validators
         ]
@@ -71,10 +64,12 @@ class FolderSerializer(serializers.ModelSerializer):
         return folder.tree.get_access(self.context.get('user'))
 
     def validate(self, attrs):
+        self._validate_unique_root_name(attrs)
         self._validate_unique_file_siblings(attrs)
         return attrs
 
-    def _validate_unique_file_siblings(self, attrs):
+    def _get_instance_name_and_parent_id(self, attrs):
+        # Helper to get the name and parent id from the current instance being validated
         if self.instance is None:
             # Create
             # By this point, other validators will have run, ensuring that 'name' and 'parent' exist
@@ -85,6 +80,20 @@ class FolderSerializer(serializers.ModelSerializer):
             # On a partial update, 'name' and 'parent' might be absent, so use the existing instance
             name = attrs['name'] if 'name' in attrs else self.instance.name
             parent_id = attrs['parent'] if 'parent' in attrs else self.instance.parent_id
+        return name, parent_id
+
+    def _validate_unique_root_name(self, attrs):
+        # UniqueTogetherValidator allows duplicate fields with NULL values, so uniqueness when
+        # parent=None must be checked explicitly
+        # See: https://github.com/encode/django-rest-framework/issues/2452
+        name, parent_id = self._get_instance_name_and_parent_id(attrs)
+        if parent_id is None and Folder.objects.filter(name=name, parent_id=parent_id).exists():
+            raise serializers.ValidationError(
+                {'name': 'A root folder with that name already exists.'}, code='unique'
+            )
+
+    def _validate_unique_file_siblings(self, attrs):
+        name, parent_id = self._get_instance_name_and_parent_id(attrs)
         if parent_id is not None and File.objects.filter(name=name, folder_id=parent_id).exists():
             raise serializers.ValidationError(
                 {'name': 'A file with that name already exists here.'}, code='unique'
