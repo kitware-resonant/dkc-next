@@ -55,6 +55,12 @@ def test_file_rest_cannot_update_size(admin_api_client, file):
 
 
 @pytest.mark.django_db
+def test_file_rest_update(admin_api_client, file):
+    resp = admin_api_client.patch(f'/api/v2/files/{file.id}', data={'description': 'hello'})
+    assert resp.status_code == 200
+
+
+@pytest.mark.django_db
 def test_file_rest_set_blob(admin_api_client, pending_file, s3ff_field_value, mocker):
     mocker.patch.object(file_compute_sha512, 'delay')
     resp = admin_api_client.patch(
