@@ -8,11 +8,9 @@ import pdb
 import platform
 import sys
 import traceback
-from typing import Any, Iterable, List, Optional
+from typing import List
 from urllib.parse import urlparse, urlunparse
 
-from cachetools import cached
-from cachetools.keys import hashkey
 import click
 from click import ClickException
 from pydantic import BaseModel
@@ -25,6 +23,8 @@ from s3_file_field_client import S3FileFieldClient
 import toml
 from xdg import BaseDirectory
 
+from rvt.models import RemoteFile, RemoteFolder
+from rvt.transfer import download, upload
 from rvt.types import RemoteOrLocalPath, RemotePath
 from rvt.utils import pager, results
 
@@ -33,80 +33,6 @@ logging.basicConfig(format=FORMAT, datefmt="[%X]", handlers=[RichHandler()])
 logger = logging.getLogger(__name__)
 
 __version__ = '0.0000'
-
-
-class RemoteFolder(BaseModel):
-    id: int
-    name: str
-
-    def __hash__(self):
-        return hash((type(self),) + tuple(self.__dict__.values()))
-
-    @classmethod
-    def from_id(cls, ctx, id) -> RemoteFolder:
-        r = ctx.session.get(f'folders/{id}')
-        r.raise_for_status()
-        return cls(**r.json())
-
-    @classmethod
-    # @cached(cache={}, key=lambda cls, ctx, name, parent: hashkey(name, parent))
-    def get_or_create(cls, ctx: CliContext, name: str, parent: RemoteFolder):
-        r = ctx.session.get('folders', params={'parent': parent.id, 'name': name})
-        if r.ok and r.json()['results']:
-            return cls(**r.json()['results'][0])
-        else:
-            r = ctx.session.post('folders', data={'name': name, 'parent': parent.id})
-            r.raise_for_status()
-            return cls(**r.json())
-
-    def folders(self, ctx) -> Iterable[RemoteFolder]:
-        for result in results(pager(ctx.session, f'folders?parent={self.id}')):
-            yield RemoteFolder(**result)
-
-    def files(self, ctx) -> Iterable[RemoteFile]:
-        for result in results(pager(ctx.session, f'files?folder={self.id}')):
-            yield RemoteFile(**result)
-
-    def file_by_name(self, ctx, name: str) -> Optional[RemoteFile]:
-        r = ctx.session.get(
-            'files',
-            params={
-                'folder': self.id,
-                'name': name,
-            },
-        )
-        r.raise_for_status()
-        if r.json()['count'] == 0:
-            return None
-        else:
-            return RemoteFile(**r.json()['results'][0])
-
-
-class RemoteFile(BaseModel):
-    id: int
-    name: str
-    size: int
-    modified: datetime
-
-    def download(self, ctx) -> requests.Response:
-        return ctx.session.get(f'files/{self.id}/download')
-
-    @classmethod
-    def create(cls, ctx: CliContext, name: str, blob: str, parent: RemoteFolder, **kwargs):
-        r = ctx.session.post(
-            'files', data={**{'name': name, 'folder': parent.id, 'blob': blob}, **kwargs}
-        )
-        r.raise_for_status()
-        return cls(**r.json())
-
-    def update_blob(self, field_value: str):
-        r = ctx.session.patch(
-            f'files/{self.id}',
-            data={
-                'blob': field_value,
-            },
-        )
-        r.raise_for_status()
 
 
 class RvtSession(BaseUrlSession):
@@ -177,45 +103,6 @@ def cli(ctx, url, verbose: int):
     )
 
 
-def main():
-    try:
-        cli()
-    except Exception:
-        if os.environ.get('DEBUG'):
-            _, _, tb = sys.exc_info()
-            traceback.print_exc()
-            pdb.post_mortem(tb)
-            return
-
-        click.echo(
-            click.style(
-                'The following unexpected error occurred while attempting your operation:\n',
-                fg='red',
-            ),
-            err=True,
-        )
-
-        click.echo(traceback.format_exc(), err=True)
-
-        click.echo(f'rvt:     v{__version__}', err=True)
-        click.echo(f'python:  v{platform.python_version()}', err=True)
-        click.echo(f'time:    {datetime.utcnow().isoformat()}', err=True)
-        click.echo(f'os:      {platform.platform()}', err=True)
-        click.echo(f'command: rvt {" ".join(sys.argv[1:])}\n', err=True)
-
-        click.echo(
-            click.style(
-                'This is a bug in rvt and should be reported. You can open an issue below: ',
-                fg='yellow',
-            ),
-            err=True,
-        )
-        click.echo(
-            'https://github.com/girder/dkc-next/issues/new',
-            err=True,
-        )
-
-
 @cli.command(name='ls', help='list contents of a dkc folder')
 @click.argument('folder', type=RemotePath())
 @click.option('--tree', default=False, is_flag=True, help='display folder as a hierarchical tree')
@@ -223,8 +110,12 @@ def main():
 def ls(ctx, folder, tree):
     def _ls(folder: dict, tree=None, prefix='.'):
         for child_folder in results(pager(ctx.session, f'folders?parent={folder["id"]}')):
-            branch = tree.add(f'[{child_folder["id"]}] {child_folder["name"]}' if tree else None)
-            if not tree:
+            if tree:
+                branch = tree.add(
+                    f'[{child_folder["id"]}] {child_folder["name"]}' if tree else None
+                )
+            else:
+                branch = None
                 click.echo(f'{child_folder["id"]}\t{prefix}/{child_folder["name"]}/')
 
             for child_file in results(pager(ctx.session, f'files?folder={child_folder["id"]}')):
@@ -294,73 +185,43 @@ def configure(ctx):
         toml.dump({'default': {'url': url}}, target)
 
 
-def _maybe_download_file(ctx, rfile: RemoteFile, dest: Path):
-    lfilename = dest / rfile.name
+def main():
+    try:
+        cli()
+    except Exception:
+        if os.environ.get('DEBUG'):
+            _, _, tb = sys.exc_info()
+            traceback.print_exc()
+            pdb.post_mortem(tb)
+            return
 
-    if lfilename.exists() and lfilename.stat().st_mtime == rfile.modified.timestamp():
-        logger.debug(f'skipping file {lfilename} (same mtime).')
-        ctx.skipped_files.append(rfile)
-        return
+        click.echo(
+            click.style(
+                'The following unexpected error occurred while attempting your operation:\n',
+                fg='red',
+            ),
+            err=True,
+        )
 
-    logger.info(f'downloading {lfilename}')
-    with open(lfilename, 'wb') as lfile:
-        lfile.write(rfile.download(ctx).content)
-    os.utime(lfilename, (datetime.now().timestamp(), rfile.modified.timestamp()))
-    ctx.synced_files.append(rfile)
+        click.echo(traceback.format_exc(), err=True)
 
+        click.echo(f'rvt:     v{__version__}', err=True)
+        click.echo(f'python:  v{platform.python_version()}', err=True)
+        click.echo(f'time:    {datetime.utcnow().isoformat()}', err=True)
+        click.echo(f'os:      {platform.platform()}', err=True)
+        click.echo(f'command: rvt {" ".join(sys.argv[1:])}\n', err=True)
 
-def download(ctx, source: RemoteFolder, dest: Path):
-    def _download(source: RemoteFolder, dest: Path):
-        dest.mkdir(exist_ok=True)
-
-        for rfile in source.files(ctx):
-            _maybe_download_file(ctx, rfile, dest)
-
-        for rfolder in source.folders(ctx):
-            lfolder = dest / rfolder.name
-            lfolder.mkdir(exist_ok=True)
-
-            for rfile in rfolder.files(ctx):
-                _maybe_download_file(ctx, rfile, lfolder)
-
-            _download(rfolder, lfolder)
-
-    _download(source, dest)
-
-
-def _maybe_upload_file(ctx, rfolder: RemoteFolder, lpath: Path):
-    rfile = rfolder.file_by_name(ctx, lpath.name)
-
-    if lpath.exists() and rfile and lpath.stat().st_mtime == rfile.modified.timestamp():
-        logger.debug(f'skipping file {lpath} (same mtime).')
-        ctx.skipped_files.append(rfile)
-        return
-
-    logger.info(f'uploading {lpath}')
-    with open(lpath, 'wb') as stream:
-        uploaded_file = ctx.s3ff.upload_file(stream, lpath.name, 'core.File.blob')['field_value']
-
-        if rfile:
-            rfile.update_blob(uploaded_file)
-        else:
-            print('create remote file')
-
-    ctx.synced_files.append(rfile)
-
-
-def upload(ctx, source: Path, dest: RemoteFolder):
-    def _upload(source: Path, dest: RemoteFolder):
-        logger.info(f'creating {source.name} under {dest}')
-        for lchild in source.iterdir():
-            print(lchild)
-            if lchild.is_file():
-                _maybe_upload_file(ctx, dest, lchild)
-            elif lchild.is_dir():
-                _upload(lchild, dest)
-            else:
-                click.echo(f'ignoring {lchild}')
-
-    _upload(source, dest)
+        click.echo(
+            click.style(
+                'This is a bug in rvt and should be reported. You can open an issue below: ',
+                fg='yellow',
+            ),
+            err=True,
+        )
+        click.echo(
+            'https://github.com/girder/dkc-next/issues/new',
+            err=True,
+        )
 
 
 if __name__ == '__main__':
