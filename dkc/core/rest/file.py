@@ -4,7 +4,6 @@ from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
 from rest_framework.decorators import action
@@ -147,7 +146,7 @@ class FileViewSet(ModelViewSet):
     @action(detail=True)
     def download(self, request, pk=None):
         """Download a file."""
-        file = get_object_or_404(File, pk=pk)
+        file = self.get_object()
         if file.blob:  # FieldFiles are falsy when not populated with a file
             return HttpResponseRedirect(file.blob.url)
         return Response(status=204)
