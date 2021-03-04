@@ -334,3 +334,9 @@ def test_set_admin_permission(user_factory, folder):
 
     tree.grant_permission(grant)
     assert grant in tree.list_granted_permissions()
+
+
+@pytest.mark.django_db
+def test_file_download_permission(api_client, file):
+    resp = api_client.get(f'/api/v2/files/{file.id}/download')
+    assert resp.status_code == 404
