@@ -49,6 +49,10 @@ class DkcMixin(ConfigMixin):
             'dkc.core.apps.CoreConfig',
         ] + configuration.INSTALLED_APPS
 
+        configuration.REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'].append(
+            'rest_framework.authentication.BasicAuthentication'
+        )
+
         # Install additional apps
         configuration.INSTALLED_APPS += [
             's3_file_field',
