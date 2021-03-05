@@ -8,7 +8,7 @@ import pdb
 import platform
 import sys
 import traceback
-from typing import List
+from typing import List, Optional
 from urllib.parse import urlparse, urlunparse
 
 import click
@@ -21,7 +21,6 @@ from rich.logging import RichHandler
 from rich.tree import Tree
 from s3_file_field_client import S3FileFieldClient
 import toml
-from xdg import BaseDirectory
 
 from rvt.models import RemoteFile, RemoteFolder
 from rvt.transfer import download, upload
@@ -38,16 +37,18 @@ __version__ = '0.0000'
 class RvtSession(BaseUrlSession):
     page_size = 50
 
-    def __init__(self, base_url: str):
+    def __init__(self, base_url: str, auth_header: Optional[str] = None):
         base_url = f'{base_url.rstrip("/")}/'  # tolerate input with or without trailing slash
         super().__init__(base_url=base_url)
         self.headers.update(
             {
                 'User-agent': f'rvt/{__version__}',
                 'Accept': 'application/json',
-                'Authorization': 'Basic ZGFuLmxhbWFubmFAa2l0d2FyZS5jb206cGFzc3dvcmQ=',
             }
         )
+
+        if auth_header:
+            self.headers['Authorization'] = auth_header
 
 
 class CliContext(BaseModel):
@@ -64,7 +65,7 @@ class CliContext(BaseModel):
 
 def default_url(url):
     def f():
-        config = Path(BaseDirectory.load_first_config('rvt')) / 'config'
+        config = Path(click.get_app_dir('rvt')) / 'config'
 
         if os.environ.get('RVT_URL'):
             logger.debug(f'using {os.environ["RVT_URL"]} as url from the environ')
@@ -94,11 +95,23 @@ def cli(ctx, url, verbose: int):
     else:
         logger.setLevel(logging.WARN)
 
-    session = RvtSession(url)
+    config_path = Path(click.get_app_dir('rvt'))
+    config_file = config_path / 'config'
+    os.makedirs(config_path, exist_ok=True)
+
+    auth_header = None
+    if config_file.exists():
+        with open(config_file) as infile:
+            profile = toml.load(infile)
+
+        if profile.get('default', {}).get('auth'):
+            auth_header = profile['default']['auth']
+
+    session = RvtSession(url, auth_header)
     ctx.obj = CliContext(
         session=session,
         url=url.rstrip('/'),
-        config=BaseDirectory.save_config_path('rvt'),
+        config=config_file,
         s3ff=S3FileFieldClient(url.rstrip('/') + '/s3-upload/', session),
     )
 
