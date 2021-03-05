@@ -116,40 +116,44 @@ def cli(ctx, url, verbose: int):
     )
 
 
-@cli.command(name='ls', help='list contents of a dkc folder')
+@cli.command(name='ls-tree', help='list contents of a dkc folder as a tree')
 @click.argument('folder', type=RemotePath())
-@click.option('--tree', default=False, is_flag=True, help='display folder as a hierarchical tree')
 @click.pass_obj
-def ls(ctx, folder, tree):
-    def _ls(folder: dict, tree=None, prefix='.'):
+def ls_tree(ctx, folder):
+    def _ls_tree(folder: dict, tree):
         for child_folder in results(pager(ctx.session, f'folders?parent={folder["id"]}')):
-            if tree:
-                branch = tree.add(
-                    f'[{child_folder["id"]}] {child_folder["name"]}' if tree else None
-                )
-            else:
-                branch = None
-                click.echo(f'{child_folder["id"]}\t{prefix}/{child_folder["name"]}/')
+            branch = tree.add(f'[{child_folder["id"]}] {child_folder["name"]}' if tree else None)
 
             for child_file in results(pager(ctx.session, f'files?folder={child_folder["id"]}')):
-                if not tree:
-                    click.echo(f'{child_file["id"]}\t{prefix}/{child_file["name"]}')
-                else:
-                    tree.add(f'[{child_file["id"]}] {child_file["name"]}')
-
-            _ls(child_folder, branch, f'{prefix}/{child_folder["name"]}')
-
-        for child_file in results(pager(ctx.session, f'files?folder={folder["id"]}')):
-            if not tree:
-                click.echo(f'{child_file["id"]}\t{prefix}/{child_file["name"]}')
-            else:
                 tree.add(f'[{child_file["id"]}] {child_file["name"]}')
 
-    tree = Tree(label=folder.name) if tree else None
-    _ls(folder.dict(), tree, folder.name)
+            _ls_tree(child_folder, branch)
 
-    if tree:
-        rich.print(tree)
+        for child_file in results(pager(ctx.session, f'files?folder={folder["id"]}')):
+            tree.add(f'[{child_file["id"]}] {child_file["name"]}')
+
+    tree = Tree(label=folder.name)
+    _ls_tree(folder.dict(), tree)
+    rich.print(tree)
+
+
+@cli.command(name='ls', help='list contents of a dkc folder')
+@click.argument('folder', type=RemotePath())
+@click.pass_obj
+def ls(ctx, folder):
+    def _ls(folder: dict, prefix='.'):
+        for child_folder in results(pager(ctx.session, f'folders?parent={folder["id"]}')):
+            click.echo(f'{child_folder["id"]}\t{prefix}/{child_folder["name"]}/')
+
+            for child_file in results(pager(ctx.session, f'files?folder={child_folder["id"]}')):
+                click.echo(f'{child_file["id"]}\t{prefix}/{child_file["name"]}')
+
+            _ls(child_folder, f'{prefix}/{child_folder["name"]}')
+
+        for child_file in results(pager(ctx.session, f'files?folder={folder["id"]}')):
+            click.echo(f'{child_file["id"]}\t{prefix}/{child_file["name"]}')
+
+    _ls(folder.dict(), folder.name)
 
 
 @cli.command(name='sync', help='sync a directory')
