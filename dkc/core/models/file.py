@@ -17,7 +17,19 @@ from .tree import Tree
 
 class File(TimeStampedModel, models.Model):
     class Meta:
-        indexes = [models.Index(fields=['folder', 'name'])]
+        indexes = [
+            models.Index(fields=['folder', 'name']),
+            models.Index(
+                fields=['legacy_file_id'],
+                condition=~models.Q(legacy_file_id=''),
+                name='file_legacy_file_id_idx',
+            ),
+            models.Index(
+                fields=['legacy_item_id'],
+                condition=~models.Q(legacy_item_id=''),
+                name='file_legacy_item_id_idx',
+            ),
+        ]
         ordering = ['name']
         constraints = [
             models.UniqueConstraint(fields=['folder', 'name'], name='file_siblings_name_unique'),
@@ -42,6 +54,9 @@ class File(TimeStampedModel, models.Model):
     folder = models.ForeignKey(Folder, on_delete=models.CASCADE, related_name='files')
     # Prevent deletion of User if it has Folders referencing it
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
+
+    legacy_file_id = models.CharField(max_length=24, default='', blank=True)
+    legacy_item_id = models.CharField(max_length=24, default='', blank=True)
 
     @property
     def abs_path(self) -> str:
