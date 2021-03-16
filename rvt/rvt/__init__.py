@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from base64 import b64encode
 from datetime import datetime
 import logging
 import os
@@ -9,18 +10,15 @@ import platform
 import sys
 import traceback
 from typing import List, Optional
-from urllib.parse import urlparse, urlunparse
 
 import click
 from click import ClickException
 from pydantic import BaseModel
-import requests
 from requests_toolbelt.sessions import BaseUrlSession
 import rich
 from rich.logging import RichHandler
 from rich.tree import Tree
 from s3_file_field_client import S3FileFieldClient
-import toml
 
 from rvt.models import RemoteFile, RemoteFolder
 from rvt.transfer import download, upload
@@ -62,31 +60,13 @@ class CliContext(BaseModel):
         arbitrary_types_allowed = True
 
 
-def default_url(url):
-    def f():
-        config = Path(click.get_app_dir('rvt')) / 'config'
-
-        if os.environ.get('RVT_URL'):
-            logger.debug(f'using {os.environ["RVT_URL"]} as url from the environ')
-            return os.environ['RVT_URL']
-        elif config.exists():
-            logger.debug(f'loading config file {config}')
-            with open(config) as infile:
-                profile = toml.load(infile)
-            logger.debug(f'using {profile["default"]["url"]} as url from the config file')
-            return profile['default']['url']
-        else:
-            return url
-
-    return f
-
-
 @click.group()
-@click.option('--url', default=default_url('http://127.0.0.1:8000/api/v2/'))
+@click.option('--auth', envvar='RVT_AUTH', help='credentials in the form of username:password')
+@click.option('--url', envvar='RVT_URL', default='http://127.0.0.1:8000/api/v2/')
 @click.option('-v', '--verbose', count=True)
 @click.version_option()
 @click.pass_context
-def cli(ctx, url, verbose: int):
+def cli(ctx, auth, url, verbose: int):
     if verbose >= 2:
         logger.setLevel(logging.DEBUG)
     elif verbose >= 1:
@@ -98,13 +78,17 @@ def cli(ctx, url, verbose: int):
     config_file = config_path / 'config'
     os.makedirs(config_path, exist_ok=True)
 
-    auth_header = None
-    if config_file.exists():
-        with open(config_file) as infile:
-            profile = toml.load(infile)
+    # auth_header = None
+    # if config_file.exists():
+    #     with open(config_file) as infile:
+    #         profile = toml.load(infile)
 
-        if profile.get('default', {}).get('auth'):
-            auth_header = profile['default']['auth']
+    #     if profile.get('default', {}).get('auth'):
+    #         auth_header = profile['default']['auth']
+    #
+    auth_header = None
+    if auth:
+        auth_header = f'Basic {b64encode(auth.encode("utf8")).decode()}'
 
     session = RvtSession(url, auth_header)
     ctx.obj = CliContext(
@@ -181,30 +165,30 @@ def sync(ctx, source, dest):
         )
 
 
-@cli.command(name='configure', help='configure rvt')
-@click.pass_obj
-def configure(ctx):
-    def url_from_prompt():
-        url = click.prompt('DKC URL (e.g. data.kitware.com)').strip()
-        o = urlparse(url)
-        scheme = 'https' if o.scheme == '' else o.scheme
-        url = urlunparse([scheme, o.netloc, o.path, o.params, o.query, o.fragment])
-        url = url.rstrip('/')
-        if not url.endswith('/api/v2'):
-            url += '/api/v2'
-        return url
+# @cli.command(name='configure', help='configure rvt')
+# @click.pass_obj
+# def configure(ctx):
+#     def url_from_prompt():
+#         url = click.prompt('DKC URL (e.g. data.kitware.com)').strip()
+#         o = urlparse(url)
+#         scheme = 'https' if o.scheme == '' else o.scheme
+#         url = urlunparse([scheme, o.netloc, o.path, o.params, o.query, o.fragment])
+#         url = url.rstrip('/')
+#         if not url.endswith('/api/v2'):
+#             url += '/api/v2'
+#         return url
 
-    while True:
-        url = url_from_prompt()
-        try:
-            r = requests.get(url + '/files')
-            r.raise_for_status()
-            break
-        except Exception:  # TODO: scope to requests
-            click.echo('That URL doesn\'t appear to work.')
+#     while True:
+#         url = url_from_prompt()
+#         try:
+#             r = requests.get(url + '/files')
+#             r.raise_for_status()
+#             break
+#         except Exception:  # TODO: scope to requests
+#             click.echo('That URL doesn\'t appear to work.')
 
-    with open(ctx.config / 'config', 'w') as target:
-        toml.dump({'default': {'url': url}}, target)
+#     with open(ctx.config / 'config', 'w') as target:
+#         toml.dump({'default': {'url': url}}, target)
 
 
 def main():

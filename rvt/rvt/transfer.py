@@ -14,14 +14,10 @@ logger = logging.getLogger(__name__)
 CHUNK_SIZE = 32 * 1024 * 1024
 
 
-def _maybe_download_file(ctx, rfile: RemoteFile, dest: Path, skip_existing=True):
+def _maybe_download_file(ctx, rfile: RemoteFile, dest: Path):
     lfilename = dest / rfile.name
 
-    if (
-        skip_existing
-        and lfilename.exists()
-        and lfilename.stat().st_mtime == rfile.modified.timestamp()
-    ):
+    if lfilename.exists() and lfilename.stat().st_mtime == rfile.modified.timestamp():
         logger.debug(f'skipping file {lfilename} (same mtime).')
         ctx.skipped_files.append(rfile)
         return
@@ -40,7 +36,7 @@ def _maybe_download_file(ctx, rfile: RemoteFile, dest: Path, skip_existing=True)
     ctx.synced_files.append(rfile)
 
 
-def download(ctx, source: RemoteFolder, dest: Path, skip_existing=True):
+def download(ctx, source: RemoteFolder, dest: Path):
     dest.mkdir(exist_ok=True)
 
     for roots, folders, files in source.walk(ctx):
@@ -48,7 +44,7 @@ def download(ctx, source: RemoteFolder, dest: Path, skip_existing=True):
         root_path.mkdir(exist_ok=True)
 
         for rfile in files:
-            _maybe_download_file(ctx, rfile, root_path, skip_existing)
+            _maybe_download_file(ctx, rfile, root_path)
 
         for rfolder in folders:
             lfolder = root_path / rfolder.name
