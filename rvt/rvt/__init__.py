@@ -25,7 +25,6 @@ import toml
 from rvt.models import RemoteFile, RemoteFolder
 from rvt.transfer import download, upload
 from rvt.types import RemoteOrLocalPath, RemotePath
-from rvt.utils import pager, results
 
 FORMAT = "%(message)s"
 logging.basicConfig(format=FORMAT, datefmt="[%X]", handlers=[RichHandler()])
@@ -116,24 +115,36 @@ def cli(ctx, url, verbose: int):
     )
 
 
+@cli.command(name='rm', help='remove a dkc folder', hidden=True)
+@click.argument('folder', type=RemotePath())
+@click.pass_obj
+def rm(ctx, folder):
+    folder.rm(ctx)
+
+
 @cli.command(name='ls-tree', help='list contents of a dkc folder as a tree')
 @click.argument('folder', type=RemotePath())
 @click.pass_obj
 def ls_tree(ctx, folder):
-    def _ls_tree(folder: dict, tree):
-        for child_folder in results(pager(ctx.session, f'folders?parent={folder["id"]}')):
-            branch = tree.add(f'[{child_folder["id"]}] {child_folder["name"]}' if tree else None)
+    def get_or_create_branch(tree, value) -> Tree:
+        for branch in tree.children:
+            if branch.label == value:
+                return branch
+        return tree.add(value)
 
-            for child_file in results(pager(ctx.session, f'files?folder={child_folder["id"]}')):
-                tree.add(f'[{child_file["id"]}] {child_file["name"]}')
+    tree = Tree(label=f'{folder.ls_repr()}/')
 
-            _ls_tree(child_folder, branch)
+    for roots, folders, files in folder.walk(ctx):
+        branch = tree
+        for root in roots[1:]:
+            branch = get_or_create_branch(branch, f'{root.ls_repr()}/')
 
-        for child_file in results(pager(ctx.session, f'files?folder={folder["id"]}')):
-            tree.add(f'[{child_file["id"]}] {child_file["name"]}')
+        for rfolder in folders:
+            branch.add(f'{rfolder.ls_repr()}/')
 
-    tree = Tree(label=folder.name)
-    _ls_tree(folder.dict(), tree)
+        for rfile in files:
+            branch.add(rfile.ls_repr())
+
     rich.print(tree)
 
 
@@ -141,19 +152,14 @@ def ls_tree(ctx, folder):
 @click.argument('folder', type=RemotePath())
 @click.pass_obj
 def ls(ctx, folder):
-    def _ls(folder: dict, prefix='.'):
-        for child_folder in results(pager(ctx.session, f'folders?parent={folder["id"]}')):
-            click.echo(f'{child_folder["id"]}\t{prefix}/{child_folder["name"]}/')
+    for roots, folders, files in folder.walk(ctx):
+        prefix = '/'.join((r.name for r in roots))
 
-            for child_file in results(pager(ctx.session, f'files?folder={child_folder["id"]}')):
-                click.echo(f'{child_file["id"]}\t{prefix}/{child_file["name"]}')
+        for rfolder in folders:
+            click.echo(f'id={rfolder.id}\t{prefix}/{rfolder.name}/')
 
-            _ls(child_folder, f'{prefix}/{child_folder["name"]}')
-
-        for child_file in results(pager(ctx.session, f'files?folder={folder["id"]}')):
-            click.echo(f'{child_file["id"]}\t{prefix}/{child_file["name"]}')
-
-    _ls(folder.dict(), folder.name)
+        for rfile in files:
+            click.echo(f'id={rfile.id}\t{prefix}/{rfile.name}')
 
 
 @cli.command(name='sync', help='sync a directory')
@@ -179,7 +185,6 @@ def sync(ctx, source, dest):
 @click.pass_obj
 def configure(ctx):
     def url_from_prompt():
-
         url = click.prompt('DKC URL (e.g. data.kitware.com)').strip()
         o = urlparse(url)
         scheme = 'https' if o.scheme == '' else o.scheme
@@ -226,6 +231,7 @@ def main():
         click.echo(f'python:  v{platform.python_version()}', err=True)
         click.echo(f'time:    {datetime.utcnow().isoformat()}', err=True)
         click.echo(f'os:      {platform.platform()}', err=True)
+        # TODO: try to scrape auth credentials?
         click.echo(f'command: rvt {" ".join(sys.argv[1:])}\n', err=True)
 
         click.echo(

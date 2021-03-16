@@ -4,6 +4,7 @@ from datetime import datetime
 import logging
 from typing import Iterable, Optional
 
+import humanize
 from pydantic import BaseModel
 import requests
 from rich.logging import RichHandler
@@ -20,9 +21,14 @@ __version__ = '0.0000'
 class RemoteFolder(BaseModel):
     id: int
     name: str
+    size: int
 
     def __hash__(self):
         return hash((type(self),) + tuple(self.__dict__.values()))
+
+    def ls_repr(self) -> str:
+        size = humanize.naturalsize(self.size, gnu=True)
+        return f'id={self.id} size={size} {self.name}'
 
     @classmethod
     def from_id(cls, ctx, id) -> RemoteFolder:
@@ -40,6 +46,19 @@ class RemoteFolder(BaseModel):
             r = ctx.session.post('folders', data={'name': name, 'parent': parent.id})
             r.raise_for_status()
             return cls(**r.json())
+
+    def rm(self, ctx):
+        r = ctx.session.delete(f'folders/{self.id}')
+        r.raise_for_status()
+
+    # TODO: note that this is expensive
+    def walk(self, ctx):
+        yield ([self], self.folders(ctx), self.files(ctx))
+
+        for child_folder in self.folders(ctx):
+            for roots, folders, files in child_folder.walk(ctx):
+                roots.insert(0, self)
+                yield roots, folders, files
 
     def folders(self, ctx) -> Iterable[RemoteFolder]:
         for result in results(pager(ctx.session, f'folders?parent={self.id}')):
@@ -64,28 +83,41 @@ class RemoteFolder(BaseModel):
             return RemoteFile(**r.json()['results'][0])
 
 
+class DoesNotExistException(Exception):
+    pass
+
+
 class RemoteFile(BaseModel):
     id: int
     name: str
     size: int
     modified: datetime
 
-    def download(self, ctx) -> requests.Response:
-        return ctx.session.get(f'files/{self.id}/download')
-
     @classmethod
-    def create(cls, ctx: CliContext, name: str, blob: str, parent: RemoteFolder, **kwargs):
-        r = ctx.session.post(
-            'files', data={**{'name': name, 'folder': parent.id, 'blob': blob}, **kwargs}
-        )
+    def from_id(cls, ctx, id) -> RemoteFile:
+        r = ctx.session.get(f'files/{id}')
         r.raise_for_status()
         return cls(**r.json())
 
-    def update_blob(self, ctx, field_value: str):
-        r = ctx.session.patch(
-            f'files/{self.id}',
-            data={
-                'blob': field_value,
-            },
+    def download(self, ctx) -> requests.Response:
+        return ctx.session.get(f'files/{self.id}/download', stream=True)
+
+    def delete(self, ctx) -> requests.Response:
+        r = ctx.session.delete(f'files/{self.id}')
+        r.raise_for_status()
+        return r
+
+    def ls_repr(self) -> str:
+        size = humanize.naturalsize(self.size, gnu=True)
+        return f'id={self.id} size={size} {self.name}'
+
+    @classmethod
+    def create(
+        cls, ctx: CliContext, name: str, blob: str, size: int, parent: RemoteFolder, **kwargs
+    ):
+        r = ctx.session.post(
+            'files',
+            data={**{'name': name, 'folder': parent.id, 'blob': blob, 'size': size}, **kwargs},
         )
         r.raise_for_status()
+        return cls(**r.json())
