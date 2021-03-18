@@ -11,8 +11,8 @@ from rich.logging import RichHandler
 
 from rvt.utils import pager, results
 
-FORMAT = "%(message)s"
-logging.basicConfig(format=FORMAT, datefmt="[%X]", handlers=[RichHandler()])
+FORMAT = '%(message)s'
+logging.basicConfig(format=FORMAT, datefmt='[%X]', handlers=[RichHandler()])
 logger = logging.getLogger(__name__)
 
 __version__ = '0.0000'
@@ -38,7 +38,7 @@ class RemoteFolder(BaseModel):
 
     @classmethod
     # @cached(cache={}, key=lambda cls, ctx, name, parent: hashkey(name, parent))
-    def get_or_create(cls, ctx: CliContext, name: str, parent: RemoteFolder):
+    def get_or_create(cls, ctx, name: str, parent: RemoteFolder):
         r = ctx.session.get('folders', params={'parent': parent.id, 'name': name})
         if r.ok and r.json()['results']:
             return cls(**r.json()['results'][0])
@@ -117,12 +117,14 @@ class RemoteFile(BaseModel):
         return r
 
     @classmethod
-    def create(
-        cls, ctx: CliContext, name: str, size: int, parent: RemoteFolder, **kwargs
-    ):
+    def create(cls, ctx, name: str, size: int, parent: RemoteFolder, **kwargs):
         r = ctx.session.post(
             'files',
             data={**{'name': name, 'folder': parent.id, 'size': size}, **kwargs},
         )
         r.raise_for_status()
         return cls(**r.json())
+
+    def rm(self, ctx):
+        r = ctx.session.delete(f'files/{self.id}')
+        r.raise_for_status()

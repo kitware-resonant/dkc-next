@@ -6,24 +6,24 @@ from rvt.models import RemoteFolder
 
 
 class RemotePath(click.ParamType):
-    name = "remote-path"
+    name = 'remote-path'
 
     def convert(self, value, param, ctx):
         if not value.startswith('dkc://'):
-            self.fail(f'remote path must start with dkc://')
+            self.fail('remote path must start with dkc://')
 
         value = value.replace('dkc://', '')
         r = ctx.obj.session.get(f'folders/{value}')
         if r.ok:
             return RemoteFolder(**r.json())
         elif r.status_code == 404:
-            self.fail(f'folder with id {value} doesn\'t exist or you are unauthorized.')
+            self.fail(f"folder with id {value} doesn't exist or you are unauthorized.")
         else:
             r.raise_for_status()
 
 
 class RemoteOrLocalPath(click.ParamType):
-    name = "remote-or-local-path"
+    name = 'remote-or-local-path'
 
     def convert(self, value, param, ctx):
         if value.startswith('dkc://'):
@@ -32,7 +32,7 @@ class RemoteOrLocalPath(click.ParamType):
             if r.ok:
                 return RemoteFolder(**r.json())
             elif r.status_code == 404:
-                self.fail(f'folder with id {value} doesn\'t exist or you are unauthorized.')
+                self.fail(f"folder with id {value} doesn't exist or you are unauthorized.")
             else:
                 r.raise_for_status()
         else:

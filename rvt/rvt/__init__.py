@@ -22,10 +22,10 @@ from s3_file_field_client import S3FileFieldClient
 
 from rvt.models import RemoteFile, RemoteFolder
 from rvt.transfer import download, upload
-from rvt.types import RemoteOrLocalPath, RemotePath
+from rvt.types import RemoteFile as RemoteFileType, RemoteOrLocalPath, RemotePath
 
-FORMAT = "%(message)s"
-logging.basicConfig(format=FORMAT, datefmt="[%X]", handlers=[RichHandler()])
+FORMAT = '%(message)s'
+logging.basicConfig(format=FORMAT, datefmt='[%X]', handlers=[RichHandler()])
 logger = logging.getLogger(__name__)
 
 __version__ = '0.0000'
@@ -99,11 +99,19 @@ def cli(ctx, auth, url, verbose: int):
     )
 
 
-@cli.command(name='rm', help='remove a dkc folder', hidden=True)
+@cli.command(name='rmdir', help='remove a dkc folder', hidden=True)
 @click.argument('folder', type=RemotePath(), nargs=-1)
 @click.pass_obj
-def rm(ctx, folder):
+def rmdir(ctx, folder):
     for f in folder:
+        f.rm(ctx)
+
+
+@cli.command(name='rm', help='remove a dkc file', hidden=True)
+@click.argument('file', type=RemoteFileType(), nargs=-1)
+@click.pass_obj
+def rm(ctx, file):
+    for f in file:
         f.rm(ctx)
 
 
