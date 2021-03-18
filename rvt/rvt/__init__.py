@@ -100,10 +100,11 @@ def cli(ctx, auth, url, verbose: int):
 
 
 @cli.command(name='rm', help='remove a dkc folder', hidden=True)
-@click.argument('folder', type=RemotePath())
+@click.argument('folder', type=RemotePath(), nargs=-1)
 @click.pass_obj
 def rm(ctx, folder):
-    folder.rm(ctx)
+    for f in folder:
+        f.rm(ctx)
 
 
 @cli.command(name='ls-tree', help='list contents of a dkc folder as a tree')

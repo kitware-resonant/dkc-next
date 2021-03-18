@@ -111,13 +111,18 @@ class RemoteFile(BaseModel):
         size = humanize.naturalsize(self.size, gnu=True)
         return f'id={self.id} size={size} {self.name}'
 
+    def add_blob(self, ctx, blob: str):
+        r = ctx.session.patch(f'files/{self.id}', data={'blob': blob})
+        r.raise_for_status()
+        return r
+
     @classmethod
     def create(
-        cls, ctx: CliContext, name: str, blob: str, size: int, parent: RemoteFolder, **kwargs
+        cls, ctx: CliContext, name: str, size: int, parent: RemoteFolder, **kwargs
     ):
         r = ctx.session.post(
             'files',
-            data={**{'name': name, 'folder': parent.id, 'blob': blob, 'size': size}, **kwargs},
+            data={**{'name': name, 'folder': parent.id, 'size': size}, **kwargs},
         )
         r.raise_for_status()
         return cls(**r.json())

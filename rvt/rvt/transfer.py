@@ -17,8 +17,8 @@ CHUNK_SIZE = 32 * 1024 * 1024
 def _maybe_download_file(ctx, rfile: RemoteFile, dest: Path):
     lfilename = dest / rfile.name
 
-    if lfilename.exists() and lfilename.stat().st_mtime == rfile.modified.timestamp():
-        logger.debug(f'skipping file {lfilename} (same mtime).')
+    if lfilename.exists() and lfilename.stat().st_size == rfile.size:
+        logger.debug(f'skipping file {lfilename} (same size).')
         ctx.skipped_files.append(rfile)
         return
 
@@ -32,7 +32,7 @@ def _maybe_download_file(ctx, rfile: RemoteFile, dest: Path):
             description=rfile.name,
         ):
             lfile.write(chunk)
-    os.utime(lfilename, (datetime.now().timestamp(), rfile.modified.timestamp()))
+
     ctx.synced_files.append(rfile)
 
 
@@ -54,20 +54,23 @@ def download(ctx, source: RemoteFolder, dest: Path):
 def _maybe_upload_file(ctx, rfolder: RemoteFolder, lpath: Path):
     rfile = rfolder.file_by_name(ctx, lpath.name)
 
-    if rfile and lpath.stat().st_mtime == rfile.modified.timestamp():
-        logger.debug(f'skipping file {lpath} (same mtime).')
+    if rfile and lpath.stat().st_size == rfile.size:
+        logger.debug(f'skipping file {lpath} (same size).')
         ctx.skipped_files.append(rfile)
         return
 
     logger.info(f'uploading {lpath}')
+
+    if rfile:
+        rfile.delete(ctx)
+
+    # create, upload blob, patch with blob data
+    new_rfile = RemoteFile.create(ctx, lpath.name, lpath.stat().st_size, rfolder)
+
     with open(lpath, 'rb') as stream:
-        uploaded_file = ctx.s3ff.upload_file(stream, lpath.name, 'core.File.blob')['field_value']
+        uploaded_file = ctx.s3ff.upload_file(stream, lpath.name, 'core.File.blob')
 
-        if rfile:
-            # TODO: how to changed modified?
-            rfile.delete(ctx)
-
-        RemoteFile.create(ctx, lpath.name, uploaded_file, lpath.stat().st_size, rfolder)
+    new_rfile.add_blob(ctx, uploaded_file['field_value'])
 
     ctx.synced_files.append(rfile)
 
