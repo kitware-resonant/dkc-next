@@ -65,6 +65,7 @@ setup(
         ],
         'migrate': [
             'pymongo',
+            'requests',
         ],
     },
 )
