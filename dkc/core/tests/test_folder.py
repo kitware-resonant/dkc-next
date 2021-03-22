@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 import pytest
 
+from dkc.core.models import File, Folder, Tree
 from dkc.core.models.folder import MAX_DEPTH
 
 
@@ -131,3 +132,27 @@ def test_increment_size_negative(folder_factory):
     # An IntegrityError is expected, since this should cause a 500 if it actually happens
     with pytest.raises(IntegrityError, match=r'folder_size'):
         child.increment_size(-10)
+
+
+@pytest.mark.django_db
+def test_folder_delete(folder):
+    folder.delete()
+
+    with pytest.raises(Folder.DoesNotExist):
+        Folder.objects.get(id=folder.id)
+
+    with pytest.raises(Tree.DoesNotExist):
+        Tree.objects.get(pk=folder.tree_id)
+
+
+@pytest.mark.django_db
+def test_folder_delete_recursive(folder, folder_factory, file_factory):
+    child = folder_factory(parent=folder)
+    file = file_factory(folder=folder)
+    folder.delete()
+
+    with pytest.raises(Folder.DoesNotExist):
+        Folder.objects.get(id=child.id)
+
+    with pytest.raises(File.DoesNotExist):
+        File.objects.get(id=file.id)
