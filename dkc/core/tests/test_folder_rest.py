@@ -1,7 +1,8 @@
 from django.conf import settings
 import pytest
 
-from dkc.core.models import File, Folder, Tree
+from dkc.core.models import Folder
+from dkc.core.tasks import delete_folder
 
 
 @pytest.mark.django_db
@@ -147,27 +148,11 @@ def test_folder_rest_update_parent_disallowed(admin_api_client, folder, folder_f
 
 
 @pytest.mark.django_db
-def test_folder_rest_destroy(admin_api_client, folder):
+def test_folder_rest_destroy_async(admin_api_client, folder, mocker):
+    mocker.patch.object(delete_folder, 'delay')
     resp = admin_api_client.delete(f'/api/v2/folders/{folder.id}')
-    assert resp.status_code == 204
-    with pytest.raises(Folder.DoesNotExist):
-        Folder.objects.get(id=folder.id)
-
-    with pytest.raises(Tree.DoesNotExist):
-        Tree.objects.get(pk=folder.tree_id)
-
-
-@pytest.mark.django_db
-def test_folder_rest_destroy_recursive(admin_api_client, folder, folder_factory, file_factory):
-    child = folder_factory(parent=folder)
-    file = file_factory(folder=folder)
-    resp = admin_api_client.delete(f'/api/v2/folders/{folder.id}')
-    assert resp.status_code == 204
-    with pytest.raises(Folder.DoesNotExist):
-        Folder.objects.get(id=child.id)
-
-    with pytest.raises(File.DoesNotExist):
-        File.objects.get(id=file.id)
+    assert resp.status_code == 202
+    delete_folder.delay.assert_called_once_with(folder.id)
 
 
 @pytest.mark.django_db

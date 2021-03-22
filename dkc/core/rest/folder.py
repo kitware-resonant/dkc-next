@@ -22,6 +22,7 @@ from dkc.core.permissions import (
     PermissionFilterBackend,
     PermissionGrant,
 )
+from dkc.core.tasks import delete_folder
 
 from .filtering import ActionSpecificFilterBackend, IntegerOrNullFilter
 from .utils import FormattableDict
@@ -205,6 +206,11 @@ class FolderViewSet(ModelViewSet):
             tree = Tree.objects.create(quota=user.quota)
             tree.grant_permission(PermissionGrant(user_or_group=user, permission=Permission.admin))
         serializer.save(tree=tree, creator=user)
+
+    def destroy(self, request, *args, **kwargs):
+        folder = self.get_object()
+        delete_folder.delay(folder.id)
+        return Response(status=202)
 
     @swagger_auto_schema(
         operation_description='Retrieve the path from the root folder to the requested folder.',
