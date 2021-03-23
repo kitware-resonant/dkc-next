@@ -62,6 +62,10 @@ setup(
             'ipython',
             'tox',
             'werkzeug',
-        ]
+        ],
+        'migrate': [
+            'pymongo',
+            'requests',
+        ],
     },
 )
