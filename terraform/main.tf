@@ -56,6 +56,8 @@ module "api" {
   app_name  = "dkc-next"
   fqdn      = local.api_fqdn
 
+  heroku_postgresql_plan  = "hobby-basic"
+
   config_vars = {
     DJANGO_CONFIGURATION               = "HerokuProductionConfiguration"
     DJANGO_ALLOWED_HOSTS               = local.api_fqdn
