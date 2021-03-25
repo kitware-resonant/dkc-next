@@ -56,7 +56,7 @@ module "api" {
   app_name  = "dkc-next"
   fqdn      = local.api_fqdn
 
-  postgresql_plan  = "hobby-basic"
+  postgresql_plan  = "standard-0"
 
   config_vars = {
     DJANGO_CONFIGURATION               = "HerokuProductionConfiguration"
