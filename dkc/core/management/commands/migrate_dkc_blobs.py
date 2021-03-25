@@ -1,3 +1,6 @@
+import tempfile
+
+from django.core.files import File as DjangoFile
 import djclick as click
 import requests
 
@@ -13,8 +16,13 @@ def copy_file(pending_file: File, token: str) -> None:
         headers={'Girder-Token': token},
     ) as resp:
         resp.raise_for_status()
-        pending_file.blob = File(resp.raw, name=pending_file.name)
-        pending_file.save(update_fields=['blob'])
+
+        with tempfile.SpooledTemporaryFile(max_size=10 << 20) as tmp:
+            for chunk in resp.iter_content(chunk_size=1 << 20):
+                tmp.write(chunk)
+            tmp.seek(0)
+            pending_file.blob = DjangoFile(tmp, name=pending_file.name)
+            pending_file.save(update_fields=['blob'])
 
 
 @click.command()
@@ -22,10 +30,12 @@ def copy_file(pending_file: File, token: str) -> None:
 def command(dkc_api_key) -> None:
     resp = requests.post(f'{DKC_API}/api_key/token', data={'key': dkc_api_key})
     resp.raise_for_status()
-    token = resp['authToken']['token']
+    token = resp.json()['authToken']['token']
 
     while True:
-        pending_files = list(File.objects.filter(blob='').exclude(legacy_file_id='')[:1000])
+        pending_files = list(
+            File.objects.filter(blob='').exclude(legacy_file_id='').order_by()[:1000]
+        )
         if not pending_files:
             break
 

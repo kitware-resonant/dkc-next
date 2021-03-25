@@ -11,8 +11,6 @@ from pymongo.database import Database
 from dkc.core.models import File, Folder, Tree
 from dkc.core.permissions import Permission, PermissionGrant
 
-# BEFORE you run this script, set your default user quota to something very high e.g. 10<<40
-
 # ssh -L 27017:0.0.0.0:27017 zach.mullen@data
 # docker-compose run --rm django ./manage.py \
 #  migrate_dkc_db mongodb://host.docker.internal:27017/ 2 >> checkpoint.txt
@@ -217,6 +215,8 @@ def _sync_users(db: Database, default_user: User) -> UserMap:
                 password='',  # TODO migrate passwords?
             )
             user.save()
+            user.quota.allowed = 5 << 40  # So we don't hit quota limits. Update later.
+            user.quota.save()
             # TODO groups?
         user_map[str(legacy_user['_id'])] = user
     return user_map
