@@ -12,7 +12,7 @@ def staff_home(request: HttpRequest) -> HttpResponse:
 
 
 @staff_member_required
-def trees_by_file_count_view(request: HttpRequest) -> HttpResponse:
+def staff_tree_size(request: HttpRequest) -> HttpResponse:
     trees_annotated = (
         Tree.objects.annotate(num_files=Count('all_folders__files'))
         .filter(all_folders__parent__isnull=True)
@@ -22,4 +22,4 @@ def trees_by_file_count_view(request: HttpRequest) -> HttpResponse:
         )
         .order_by('-num_files')
     )
-    return render(request, 'core/trees_by_file_count.html', {'trees': trees_annotated})
+    return render(request, 'core/staff_tree_size.html', {'trees': trees_annotated})

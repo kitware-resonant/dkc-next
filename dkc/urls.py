@@ -25,7 +25,7 @@ urlpatterns = [
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('admin/', admin.site.urls),
     path('staff/', views.staff_home, name='staff-home'),
-    path('staff/trees-by-file-count', views.trees_by_file_count_view),
+    path('staff/tree/size/', views.staff_tree_size, name='staff-tree-size'),
     path('api/v2/s3-upload/', include('s3_file_field.urls')),
     path('api/v2/', include(router.urls)),
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),
