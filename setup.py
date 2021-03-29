@@ -45,6 +45,7 @@ setup(
         'django-extensions',
         'django-filter',
         'django-guardian',
+        'django-girder-style>=0.3.0',
         'django-girder-utils>=0.8.0',
         'django-oauth-toolkit',
         'django-s3-file-field[minio]',
