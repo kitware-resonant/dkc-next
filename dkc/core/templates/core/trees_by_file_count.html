@@ -8,22 +8,22 @@
     <table>
       <thead>
         <tr>
-          <th>ID</th>
+          <th>Tree ID</th>
           <th>Name</th>
           <th>File count</th>
           <th>Size</th>
         </tr>
       </thead>
       <tbody>
-        {% for row in rows %}
+        {% for tree in trees %}
         <tr>
-          {% for col in row %}
-          <td>{{ col }}</td>
-          {% endfor %}
+          <td>{{ tree.id }}</td>
+          <td>{{ tree.name }}</td>
+          <td>{{ tree.num_files }}</td>
+          <td>{{ tree.size }}</td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </body>
 </html>
-
