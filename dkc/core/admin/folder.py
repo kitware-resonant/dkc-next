@@ -6,6 +6,7 @@ from dkc.core.models import Folder, Tree
 
 @admin.register(Folder)
 class FolderAdmin(admin.ModelAdmin):
+    list_select_related = ['parent']
     list_display = ['id', 'name', 'parent']
     list_display_links = ['id', 'name']
 
