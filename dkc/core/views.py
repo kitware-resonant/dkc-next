@@ -26,4 +26,4 @@ def trees_by_file_count_view(request: HttpRequest) -> HttpResponse:
     with connection.cursor() as cursor:
         cursor.execute(TREES_BY_FILE_COUNT_Q)
         rows = cursor.fetchall()
-    return render(request, 'staff/trees_by_file_count.html', {'rows': rows})
+    return render(request, 'core/trees_by_file_count.html', {'rows': rows})
