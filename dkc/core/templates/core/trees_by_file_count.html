@@ -20,7 +20,7 @@
           <td>{{ tree.id }}</td>
           <td>{{ tree.name }}</td>
           <td>{{ tree.num_files }}</td>
-          <td>{{ tree.size }}</td>
+          <td>{{ tree.size|filesizeformat }}</td>
         </tr>
         {% endfor %}
       </tbody>
