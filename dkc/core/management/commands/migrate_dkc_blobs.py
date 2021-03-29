@@ -15,6 +15,10 @@ def copy_file(pending_file: File, token: str) -> None:
         stream=True,
         headers={'Girder-Token': token},
     ) as resp:
+        if 400 <= resp.status_code < 500:
+            print('Skipped due to 4xx')
+            return
+
         resp.raise_for_status()
 
         with tempfile.SpooledTemporaryFile(max_size=10 << 20) as tmp:
