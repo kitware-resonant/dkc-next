@@ -1,38 +1,58 @@
 {% extends 'core/staff_base.html' %}
 
-{% block extra_head %}
-<style type="text/css">
-  table th {
-    border: 1px solid black;
-}
-</style>
-{% endblock %}
-
 {% block body_content %}
-<h1>Tree Sizes</h1>
+<div class="flex flex-col">
+  <div class="py-2 align-middle inline-block min-w-full px-8">
+    <h1 class="text-2xl font-bold text-gray-900">
+      Tree Sizes
+    </h1>
 
-<table>
-  <thead>
-    <tr>
-      <th>Tree</th>
-      <th colspan="3">Root Folder</th>
-    </tr>
-    <tr>
-      <th>ID</th>
-      <th>Name</th>
-      <th>File count</th>
-      <th>Size</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for tree in trees %}
-    <tr>
-      <td>{{ tree.id }}</td>
-      <td>{{ tree.name }}</td>
-      <td>{{ tree.num_files }}</td>
-      <td>{{ tree.size|filesizeformat }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+    <div class="shadow overflow-hidden border-b border-gray-200 rounded-lg">
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead>
+          <tr class="bg-gray-100">
+            <th scope="col" class="border px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Tree
+            </th>
+            <th scope="col" colspan="3" class="border px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Root Folder
+            </th>
+          </tr>
+          <tr class="bg-gray-50">
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              ID
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Name
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              File count
+            </th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Size
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          {% for tree in trees %}
+          <tr>
+            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+              {{ tree.id }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {{ tree.name }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {{ tree.num_files }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {{ tree.size|filesizeformat }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 {% endblock %}
