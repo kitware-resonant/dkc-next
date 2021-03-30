@@ -1,0 +1,38 @@
+{% extends 'core/staff_base.html' %}
+
+{% block extra_head %}
+<style type="text/css">
+  table th {
+    border: 1px solid black;
+}
+</style>
+{% endblock %}
+
+{% block body_content %}
+<h1>Tree Sizes</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Tree</th>
+      <th colspan="3">Root Folder</th>
+    </tr>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>File count</th>
+      <th>Size</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for tree in trees %}
+    <tr>
+      <td>{{ tree.id }}</td>
+      <td>{{ tree.name }}</td>
+      <td>{{ tree.num_files }}</td>
+      <td>{{ tree.size|filesizeformat }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
