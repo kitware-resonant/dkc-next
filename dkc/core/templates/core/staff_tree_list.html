@@ -7,6 +7,22 @@
       Tree Sizes
     </h1>
 
+    <div>
+      <h4>Sort By</h4>
+      <ul>
+        <li>
+          <a href="{% url 'staff-tree-list' %}?sort_by=files">
+            File count
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'staff-tree-list' %}?sort_by=size">
+            Size
+          </a>
+        </li>
+      </ul>
+    </div>
+
     <div class="shadow overflow-hidden border-b border-gray-200 rounded-lg">
       <table class="min-w-full divide-y divide-gray-200">
         <thead>

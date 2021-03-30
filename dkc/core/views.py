@@ -1,6 +1,6 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.db.models import Count, F
-from django.http import HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import render
 
 from dkc.core.models import Tree
@@ -12,7 +12,16 @@ def staff_home(request: HttpRequest) -> HttpResponse:
 
 
 @staff_member_required
-def staff_tree_size(request: HttpRequest) -> HttpResponse:
+def staff_tree_list(request: HttpRequest) -> HttpResponse:
+    sort_by = request.GET.get('sort_by', 'files')
+    try:
+        order_by = {
+            'files': '-num_files',
+            'size': '-size',
+        }[sort_by]
+    except KeyError:
+        raise Http404('Invalid sort_by')
+
     trees_annotated = (
         Tree.objects.annotate(num_files=Count('all_folders__files'))
         .filter(all_folders__parent__isnull=True)
@@ -20,6 +29,6 @@ def staff_tree_size(request: HttpRequest) -> HttpResponse:
             name=F('all_folders__name'),
             size=F('all_folders__size'),
         )
-        .order_by('-num_files')
+        .order_by(order_by)
     )
-    return render(request, 'core/staff_tree_size.html', {'trees': trees_annotated})
+    return render(request, 'core/staff_tree_list.html', {'trees': trees_annotated})
