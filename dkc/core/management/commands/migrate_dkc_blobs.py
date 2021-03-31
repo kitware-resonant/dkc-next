@@ -16,12 +16,13 @@ def copy_file(pending_file: File, token: str) -> None:
         headers={'Girder-Token': token},
     ) as resp:
         if 400 <= resp.status_code < 500:
-            print('Skipped due to 4xx')
+            print('4xx encountered, deleting file')
+            pending_file.delete()
             return
 
         resp.raise_for_status()
 
-        with tempfile.SpooledTemporaryFile(max_size=10 << 20) as tmp:
+        with tempfile.SpooledTemporaryFile(max_size=64 << 20) as tmp:
             for chunk in resp.iter_content(chunk_size=1 << 20):
                 tmp.write(chunk)
             tmp.seek(0)
