@@ -52,7 +52,7 @@ class FileSerializer(serializers.ModelSerializer):
         ]
 
     def get_access(self, file: File) -> Dict[str, bool]:
-        return file.folder.tree.get_access(self.context.get('user'))
+        return file.folder.tree.get_access(self.context['user'])
 
     def validate(self, attrs):
         self._validate_unique_folder_siblings(attrs)
