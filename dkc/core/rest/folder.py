@@ -62,7 +62,7 @@ class FolderSerializer(serializers.ModelSerializer):
         ]
 
     def get_access(self, folder: Folder) -> Dict[str, bool]:
-        return folder.tree.get_access(self.context.get('user'))
+        return folder.tree.get_access(self.context['user'])
 
     def validate(self, attrs):
         self._validate_unique_root_name(attrs)
