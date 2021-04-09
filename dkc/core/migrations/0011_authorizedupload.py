@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('core', '0009_file_pre_creation'),
+        ('core', '0010_legacy_ids'),
     ]
 
     operations = [
