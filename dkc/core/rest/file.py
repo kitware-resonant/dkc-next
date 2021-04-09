@@ -3,8 +3,8 @@ from typing import Dict
 
 from django.contrib.auth.models import User
 from django.core import signing
+from django.db import transaction
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import serializers
@@ -19,6 +19,7 @@ from rest_framework.viewsets import ModelViewSet
 from dkc.core.exceptions import QuotaLimitedError
 from dkc.core.models import AuthorizedUpload, File, Folder
 from dkc.core.permissions import HasAccess, Permission, PermissionFilterBackend
+from dkc.core.tasks import file_compute_sha512
 
 from .filtering import ActionSpecificFilterBackend
 from .utils import FormattableDict
@@ -58,7 +59,7 @@ class FileSerializer(serializers.ModelSerializer):
         ]
 
     def get_access(self, file: File) -> Dict[str, bool]:
-        return file.folder.tree.get_access(self.context.get('user'))
+        return file.folder.tree.get_access(self.context['user'])
 
     authorization = serializers.CharField(write_only=True, required=False)
 
@@ -121,7 +122,7 @@ class FileViewSet(ModelViewSet):
     permission_classes = [HasAccess | CreateWithAuthorizedUpload]
 
     filter_backends = [PermissionFilterBackend, ActionSpecificFilterBackend]
-    filterset_fields = ['folder', 'sha512']
+    filterset_fields = ['folder', 'sha512', 'name']
 
     def get_serializer_class(self):
         if self.action in ['update', 'partial_update']:
@@ -178,6 +179,27 @@ class FileViewSet(ModelViewSet):
                 {'size': ['This file would exceed the size quota for this folder.']}
             )
 
+    def perform_update(self, serializer: FileUpdateSerializer) -> None:
+        if 'blob' in serializer.validated_data:
+            with transaction.atomic():
+                # We lock this file row in order to make sure `blob` can only be set once.
+                # This ensures that we launch at most one `file_compute_sha512` async jobs.
+                # If we didn't have atomicity on this operation, it would be possible to
+                # create a race condition between async hashing jobs that could cause a
+                # mismatch between the blob and the checksum. Aside from security implications,
+                # violations of the immutable blob policy could also cause data integrity failures.
+                file: File = File.objects.select_for_update().get(pk=serializer.instance.pk)
+                if file.blob:
+                    raise serializers.ValidationError(
+                        {'blob': ["A file's blob may only be set once."]}
+                    )
+
+                serializer.save()
+
+            file_compute_sha512.delay(file.pk)
+        else:
+            serializer.save()
+
     @swagger_auto_schema(
         responses={
             204: 'This file is pending and has no associated content.',
@@ -187,7 +209,7 @@ class FileViewSet(ModelViewSet):
     @action(detail=True)
     def download(self, request, pk=None):
         """Download a file."""
-        file = get_object_or_404(File, pk=pk)
+        file = self.get_object()
         if file.blob:  # FieldFiles are falsy when not populated with a file
             return HttpResponseRedirect(file.blob.url)
         return Response(status=204)

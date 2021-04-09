@@ -1,0 +1,29 @@
+{% extends 'girder_style/base.html' %}
+
+{% block head_title %}DKC Management{% endblock %}
+
+{% block body %}
+<body>
+<div class="relative bg-gray-200">
+  <div class="flex justify-between items-center px-6 py-6 justify-start space-x-10">
+    <span class="font-bold">DKC Management</span>
+    <div class="flex-1 flex items-center justify-between">
+      <nav class="flex space-x-10">
+        <a href="{% url 'staff-home' %}" class="text-base font-medium text-gray-500 hover:text-gray-900">
+          Staff Home
+        </a>
+        <a href="{% url 'staff-tree-size' %}" class="text-base font-medium text-gray-500 hover:text-gray-900">
+          Tree Sizes
+        </a>
+      </nav>
+      <div class="flex items-center ml-12">
+        <i class="ri-user-fill mr-1"></i>
+        <span class="italic">{{ user.username }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block body_content %}{% endblock %}
+</body>
+{% endblock %}

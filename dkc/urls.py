@@ -5,6 +5,7 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions, routers
 
+from dkc.core import views
 from dkc.core.rest import AuthorizedUploadViewSet, FileViewSet, FolderViewSet, UserViewSet
 
 router = routers.SimpleRouter(trailing_slash=False)
@@ -24,6 +25,8 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('oauth/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     path('admin/', admin.site.urls),
+    path('staff/', views.staff_home, name='staff-home'),
+    path('staff/tree/size/', views.staff_tree_size, name='staff-tree-size'),
     path('api/v2/s3-upload/', include('s3_file_field.urls')),
     path('api/v2/', include(router.urls)),
     path('api/docs/redoc/', schema_view.with_ui('redoc'), name='docs-redoc'),

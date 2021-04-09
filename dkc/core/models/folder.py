@@ -18,7 +18,12 @@ MAX_DEPTH = 30
 
 class Folder(TimeStampedModel, models.Model):
     class Meta:
-        indexes = [models.Index(fields=['parent', 'name'])]
+        indexes = [
+            models.Index(fields=['parent', 'name']),
+            models.Index(
+                fields=['legacy_id'], condition=~models.Q(legacy_id=''), name='folder_legacy_id_idx'
+            ),
+        ]
         ordering = ['name']
         constraints = [
             models.UniqueConstraint(fields=['parent', 'name'], name='folder_siblings_name_unique'),
@@ -59,6 +64,8 @@ class Folder(TimeStampedModel, models.Model):
     )
     # Prevent deletion of User if it has Folders referencing it
     creator = models.ForeignKey(User, on_delete=models.PROTECT)
+
+    legacy_id = models.CharField(max_length=24, default='', blank=True)
 
     @property
     def is_root(self) -> bool:

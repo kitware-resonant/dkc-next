@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, List, Optional, Set, Type
+from typing import TYPE_CHECKING, Dict, List, Set, Type
 
 from django.contrib.auth.models import Group, User
 from django.contrib.contenttypes.models import ContentType
@@ -138,9 +138,9 @@ class Tree(models.Model):
         existing_grant_set = set(self.list_granted_permissions())
         self.remove_permission_list(list(existing_grant_set - grant_set))
 
-    def get_access(self, user: Optional[User]) -> Dict[str, bool]:
+    def get_access(self, user: User) -> Dict[str, bool]:
         """Return the permissions that the given user has on this entity."""
-        if user is None:
+        if user.is_anonymous:
             # This is a special case for the anonymous user.  Access can only
             # be 'read', and only for public trees.
             access = {p.name: False for p in Permission}
