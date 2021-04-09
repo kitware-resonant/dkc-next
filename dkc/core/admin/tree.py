@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.db.models import F
-from django_admin_display import admin_display
 
 from dkc.core.models import Tree
 
@@ -15,6 +14,6 @@ class TreeAdmin(admin.ModelAdmin):
         qs = qs.filter(all_folders__parent__isnull=True).annotate(name=F('all_folders__name'))
         return qs
 
-    @admin_display(short_description='Root folder name', admin_order_field='name')
+    @admin.display(description='Root folder name', ordering='name')
     def name(self, obj: Tree) -> str:
         return obj.name

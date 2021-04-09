@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.db import models
-from django_admin_display import admin_display
 import humanize
 
 from dkc.core.models import Quota
@@ -15,17 +14,17 @@ class QuotaAdmin(admin.ModelAdmin):
 
     readonly_fields = ['used', 'usage_percent']
 
-    @admin_display(short_description='Used', admin_order_field='used')
+    @admin.display(description='Used', ordering='used')
     def human_used(self, obj: Quota) -> str:
         return humanize.naturalsize(obj.used, binary=True)
 
-    @admin_display(short_description='Allowed', admin_order_field='used')
+    @admin.display(description='Allowed', ordering='used')
     def human_allowed(self, obj: Quota) -> str:
         return humanize.naturalsize(obj.allowed, binary=True)
 
-    @admin_display(
-        short_description='% Used',
-        admin_order_field=models.Case(
+    @admin.display(
+        description='% Used',
+        ordering=models.Case(
             # Prevent division by zero, and sort the result as effectively 100%
             models.When(allowed=0, then=1),
             # Multiply by 1.0 to force floating-point division

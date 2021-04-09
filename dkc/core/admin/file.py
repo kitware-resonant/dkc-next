@@ -1,7 +1,6 @@
 from django.contrib import admin, messages
 from django.db.models import QuerySet
 from django.http import HttpRequest
-from django_admin_display import admin_display
 
 from dkc.core.models import File
 from dkc.core.tasks import file_compute_sha512
@@ -44,16 +43,16 @@ class FileAdmin(admin.ModelAdmin):
         else:
             return fields + ['folder']
 
-    @admin_display(
-        short_description='Checksum prefix',
-        empty_value_display='Not computed',
+    @admin.display(
+        description='Checksum prefix',
+        empty_value='Not computed',
         # Sorting by checksum also sorts the prefix values
-        admin_order_field='sha512',
+        ordering='sha512',
     )
     def short_checksum(self, file: File):
         return file.short_checksum
 
-    @admin_display(short_description='Recompute checksum')
+    @admin.action(description='Recompute checksum')
     def compute_sha512(self, request: HttpRequest, queryset: QuerySet):
         for file in queryset:
             file_compute_sha512.delay(file.pk)
