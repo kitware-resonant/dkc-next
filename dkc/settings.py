@@ -14,6 +14,7 @@ from composed_configuration import (
     TestingBaseConfiguration,
 )
 from composed_configuration._configuration import _BaseConfiguration, _HerokuMixin
+from configurations import values
 from django.core.validators import MaxLengthValidator, RegexValidator
 
 username_validators = [
@@ -41,6 +42,8 @@ class DkcMixin(ConfigMixin):
     ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
 
     DKC_DEFAULT_QUOTA = 3 << 30  # 3 GB
+    DKC_AUTHORIZED_UPLOAD_EXPIRATION_DAYS = 7
+    DKC_SPA_URL = values.Value(environ_required=True)
 
     @staticmethod
     def before_binding(configuration: ComposedConfiguration) -> None:
@@ -61,11 +64,11 @@ class DkcMixin(ConfigMixin):
 
 
 class DevelopmentConfiguration(DkcMixin, DevelopmentBaseConfiguration):
-    pass
+    DKC_SPA_URL = values.Value('http://localhost:8080/')
 
 
 class TestingConfiguration(DkcMixin, TestingBaseConfiguration):
-    pass
+    DKC_SPA_URL = 'http://dkc-web.test/'
 
 
 # Don't define a generic ProductionConfiguration, since this only targets Heroku deployment

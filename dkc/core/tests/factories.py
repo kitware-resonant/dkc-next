@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 import factory
 import factory.django
 
-from dkc.core.models import File, Folder, Terms, TermsAgreement, Tree
+from dkc.core.models import AuthorizedUpload, File, Folder, Terms, TermsAgreement, Tree
 
 _metadata_faker = factory.Faker('pydict', nb_elements=5, value_types=[str, int, float, bool])
 
@@ -92,3 +92,11 @@ class TermsAgreementFactory(factory.django.DjangoModelFactory):
     terms = factory.SubFactory(TermsFactory)
     user = factory.SubFactory(UserFactory)
     checksum = factory.SelfAttribute('terms.checksum')
+
+
+class AuthorizedUploadFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = AuthorizedUpload
+
+    creator = factory.SubFactory(UserFactory)
+    folder = factory.SubFactory(FolderFactory)

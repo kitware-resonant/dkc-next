@@ -56,6 +56,7 @@ def s3ff_field_value() -> str:
     )
 
 
+register(factories.AuthorizedUploadFactory, 'authorized_upload')
 register(factories.FileFactory)
 register(factories.FolderFactory)
 register(factories.TermsFactory)
