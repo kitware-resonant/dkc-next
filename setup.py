@@ -52,7 +52,7 @@ setup(
         'drf-yasg',
         'humanize',
         # Production-only
-        'django-composed-configuration[prod]',
+        'django-composed-configuration[prod]>=0.16',
         'gunicorn',
     ],
     extras_require={
