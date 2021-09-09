@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
-from girder_utils.models import JSONObjectField
+from girder_utils.db import JSONObjectField
 
 from ..permissions import Permission
 from .tree import Tree

@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.dispatch import receiver
 from django_extensions.db.models import TimeStampedModel
-from girder_utils.models import JSONObjectField
+from girder_utils.db import JSONObjectField
 from s3_file_field import S3FileField
 
 from ..permissions import Permission
